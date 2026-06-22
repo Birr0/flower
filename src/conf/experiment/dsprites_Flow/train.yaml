@@ -1,0 +1,26 @@
+# @package _global_
+
+defaults:
+- /data/dsprites
+- /trainer/gpu
+- /logger/wandb
+- /logger/csv
+- /paths/default
+- /hydra/default
+- model
+- sweeps
+- meta
+- _self_
+
+hydra:
+  sweeper:
+    params:
+      ++data.y_catalog.drop_variables: ${....sweeps.drop_variables.0}, ${....sweeps.drop_variables.1}, ${....sweeps.drop_variables.2} #, ${....sweeps.drop_variables.3}
+      +seed: ${....sweeps.seeds.0} #, ${....sweeps.seeds.1} #, ${....sweeps.seeds.2}
+      ++lightning_loader.hidden_dim: ${....sweeps.n_hidden.0}, ${....sweeps.n_hidden.1}, ${....sweeps.n_hidden.2}
+      ++lightning_loader.n_layers: ${....sweeps.n_layers.0}, ${....sweeps.n_layers.1}, ${....sweeps.n_layers.2}
+trainer:
+  max_epochs: 100
+  #limit_train_batches: 10
+  #limit_val_batches: 10
+  #limit_test_batches: 10

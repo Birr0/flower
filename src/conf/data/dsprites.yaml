@@ -1,0 +1,77 @@
+x_ds:
+  dataset_name: "dsprites"
+  fp: ${paths.data_dir}/dsprites-dataset
+  type: "image"
+  size: [64, 64]
+  split: "train"
+
+y_catalog:
+  catalog_name: "dsprites"
+  fp: null
+  join_method: "concat"
+  variables:
+    label_shape:
+      name: "label_shape"
+      size: 1
+      processing_fn: null
+    value_x_position:
+      name: "value_x_position"
+      size: 1
+      processing_fn: null
+    value_y_position:
+      name: "value_y_position"
+      size: 1
+      processing_fn: null
+    value_orientation_sin:
+      name: "value_orientation_sin"
+      size: 1
+      processing_fn: null
+    value_orientation_cos:
+      name: "value_orientation_sin"
+      size: 1
+      processing_fn: null
+    value_scale:
+      name: "value_scale"
+      size: 1
+      processing_fn: null
+  drop_variables: []
+
+train_dataset:
+  _target_: flower.data.dsprites.dSprites
+  split: "train"
+  x_ds: ${..x_ds}
+  y_catalog: ${..y_catalog}
+
+val_dataset:
+  _target_: flower..data.dsprites.dSprites
+  split: "val"
+  x_ds: ${..x_ds}
+  y_catalog: ${..y_catalog}
+
+test_dataset:
+  _target_: flower..data.dsprites.dSprites
+  split: "test"
+  x_ds: ${..x_ds}
+  y_catalog: ${..y_catalog}
+
+loader:
+  _target_: flower..data.modules.FlowerDataLoader
+  datasets:
+    train:
+      _target_: flower.data.modules.FlowerDataset
+      dataset: ${....train_dataset}
+      return_catalog: true
+    val:
+      _target_: flower.data.modules.FlowerDataset
+      dataset: ${....val_dataset}
+      return_catalog: true
+    test:
+      _target_: flower.data.modules.FlowerDataset
+      dataset: ${....test_dataset}
+      return_catalog: true
+  batch_size: 64 #64 #128
+  random_state: ${seed}
+  shuffle: true
+  num_workers: 24
+
+model_id: null ## populate in code

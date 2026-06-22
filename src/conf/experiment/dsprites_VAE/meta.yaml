@@ -1,0 +1,10 @@
+meta:
+  authors:
+  - BR
+  data_id: 1
+  data_name: dsprites
+  description: VAE for dsprites dataset.
+  experiment_id: 4
+  experiment_name: dsprites_VAE
+  experiment_path: ${paths.data_dir}/${meta.data_name}/${meta.experiment_name}/
+  version: 1.0

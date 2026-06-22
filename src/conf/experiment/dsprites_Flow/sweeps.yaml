@@ -1,0 +1,17 @@
+sweeps:
+  drop_variables:
+  - '["label_shape", "value_x_position", "value_y_position", "value_orientation_sin", "value_orientation_cos"]' # just scale in conditioning
+  - '["label_shape", "value_orientation_sin", "value_orientation_cos"]' # scale + pos
+  - '["label_shape"]' # scale + pos + orientation
+  n_layers:
+  - 3
+  - 4
+  - 5
+  n_hidden:
+  - 64
+  - 128
+  - 256
+  seeds:
+  - 42
+  - 43
+  - 44

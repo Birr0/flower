@@ -1,0 +1,44 @@
+# @package _global_
+
+defaults:
+  - /data/dsprites
+  - /trainer/gpu
+  - /logger/wandb
+  - /paths/default
+  - /hydra/default
+  - model
+  - sweeps
+  - meta
+  - train
+  - _self_
+
+lightning_loader:
+  ckpt_path: null # let the code populate this.
+
+splits:
+  #- test
+  #- val
+  - train
+
+logger:
+  wandb:
+    mode: offline
+
+data:
+  loader:
+    batch_size: 512
+
+embed_opt:
+  - "orig"
+  - "cond"
+  - "uncond"
+
+batch_limit: null 
+
+hydra:
+  sweeper:
+    params:
+      ++data.y_catalog.drop_variables: ${....sweeps.drop_variables.0}, ${....sweeps.drop_variables.1}, ${....sweeps.drop_variables.2} #, ${....sweeps.drop_variables.3}
+      +seed: ${....sweeps.seeds.0} #, ${....sweeps.seeds.1} #, ${....sweeps.seeds.2}
+      ++lightning_loader.hidden_dim: ${....sweeps.n_hidden.2} #, ${....sweeps.n_hidden.1}, ${....sweeps.n_hidden.2}
+      ++lightning_loader.n_layers: ${....sweeps.n_layers.2} #, ${....sweeps.n_layers.1}, ${....sweeps.n_layers.2}

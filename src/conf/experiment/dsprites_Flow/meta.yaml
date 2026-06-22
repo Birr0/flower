@@ -1,0 +1,12 @@
+meta:
+  authors:
+  - BR
+  data_id: 1
+  data_name: dsprites
+  description: Conditional normalising flow trained on dsprites latent space.
+  experiment_id: 5
+  experiment_name: dsprites_FlowMatching_scaling
+  experiment_path: ${paths.data_dir}/${meta.data_name}/${meta.experiment_name}/
+  version: 1.0
+  vae_ckpt_path: ${oc.env:DATA_ROOT}/${meta.data_name}/dsprites_VAE/ckpts/7586427.ckpt #7482634.ckpt #5399919_0.ckpt #5268775.ckpt
+  #${oc.env:DATA_ROOT}/COLOUR_MNIST/RGBMNIST_VAE/wandb/wwdc/qmtto8sx/checkpoints/epoch=49-step=37500.ckpt

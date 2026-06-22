@@ -1,0 +1,23 @@
+# @package _global_
+
+defaults:
+  - /data/dsprites
+  - /trainer/gpu
+  - /logger/wandb
+  - /paths/default
+  - /hydra/default
+  - sweeps
+  - meta
+  - model
+  - _self_
+
+seed: 42
+
+splits: # partitions to embed.
+  - test
+
+lightning_loader:
+  ckpt_path: null # populated in code.
+  vae_ckpt_path: ${oc.env:DATA_ROOT}/${meta.data_name}/dsprites_VAE/ckpts/ #5413639_0.ckpt # 5399919 #5268775.ckpt #5267067.ckpt #5266036.ckpt #5262443.ckpt
+
+batch_limit: 1

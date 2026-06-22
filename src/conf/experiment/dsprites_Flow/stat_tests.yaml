@@ -1,0 +1,147 @@
+# @package _global_
+
+defaults:
+  - /data/dsprites
+  - /trainer/gpu
+  - /logger/wandb
+  - /paths/default
+  - /hydra/default
+  - model
+  - sweeps
+  - meta
+  - train
+  - _self_
+
+stat_tests:
+  test_1:
+    name: "Classification on z_prime with shape"
+    model:
+      _target_: sklearn.linear_model.LogisticRegression
+    variables:
+      y: shape
+      X: z_prime
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_2:
+    name: "Classification on z with shape"
+    model:
+      _target_: sklearn.linear_model.LogisticRegression
+    variables:
+      y: shape
+      X: z
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_3:
+    name: "Regression on z_prime with scale"
+    model:
+      _target_: sklearn.linear_model.LinearRegression
+    variables:
+      y: scale
+      X: z_prime
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_4:
+    name: "Regression on z with scale"
+    model:
+      _target_: sklearn.linear_model.LinearRegression
+    variables:
+      y: scale
+      X: z
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_5:
+    name: "Regression on z_prime with orientation"
+    model:
+      _target_: sklearn.linear_model.LinearRegression
+    variables:
+      y: orientation
+      X: z_prime
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_6:
+    name: "Regression on z with orientation"
+    model:
+      _target_: sklearn.linear_model.LinearRegression
+    variables:
+      y: orientation
+      X: z
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_7:
+    name: "Regression on z_prime with positionX"
+    model:
+      _target_: sklearn.linear_model.LinearRegression
+    variables:
+      y: positionX
+      X: z_prime
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_8:
+    name: "Regression on z with positionX"
+    model:
+      _target_: sklearn.linear_model.LinearRegression
+    variables:
+      y: positionX
+      X: z
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_9:
+    name: "Regression on z_prime with positionY"
+    model:
+      _target_: sklearn.linear_model.LinearRegression
+    variables:
+      y: positionY
+      X: z_prime
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+  test_10:
+    name: "Regression on z with positionY"
+    model:
+      _target_: sklearn.linear_model.LinearRegression
+    variables:
+      y: positionY
+      X: z
+    train_score: null
+    test_score: null
+    test_split: 0.2
+    random_state: ${seed}
+    embed_folder: null
+
+lightning_loader:
+  ckpt_path: null # let the code populate this.
+
+splits:
+  - test
+
+hydra:
+  sweeper:
+    params:
+      ++data.y_catalog.drop_variables: ${....sweeps.drop_variables.0}, ${....sweeps.drop_variables.1}, ${....sweeps.drop_variables.2}, ${....sweeps.drop_variables.3}, ${....sweeps.drop_variables.4}
+      +seed: ${....sweeps.seeds.0}, ${....sweeps.seeds.1}, ${....sweeps.seeds.2}
