@@ -1,5 +1,8 @@
 # cMNIST
 
+Reproduces the coloured MNIST (cMNIST) experiments: training a VAE and a conditional flow
+matching model, embedding the data, and recreating the paper's figures and tables.
+
 ## Data download 
 
 Ensure MNIST has been downloaded to the DATA_ROOT directory specified in the .env file.

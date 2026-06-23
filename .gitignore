@@ -169,3 +169,6 @@ images/
 
 # hydra output
 outputs/
+
+.claude
+.DS_Store

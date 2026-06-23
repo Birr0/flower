@@ -1,5 +1,10 @@
 # Running Flower
 
+This page describes how to configure and run Flower experiments with Hydra: the files an
+experiment needs, what each one controls, and how training and embedding outputs are laid
+out on disk. For an overview of the project as a whole, see the
+[top-level README](../../README.md).
+
 ## Making experiments
 
 The experiment should have a folder structure like the following:

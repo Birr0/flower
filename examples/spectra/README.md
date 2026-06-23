@@ -1,5 +1,8 @@
 # Galaxy Spectra
 
+Reproduces the SDSS galaxy spectra experiments: training Flower's conditional flow matching
+model on SPENDER-encoded spectra and comparing against the paper's benchmarks.
+
 ## Data installation
 
 Follow the Multimodal Universe instructions on downloading the SDSS I/II spectra data, found here: https://github.com/MultimodalUniverse/MultimodalUniverse. 

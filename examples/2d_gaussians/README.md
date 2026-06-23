@@ -1,5 +1,8 @@
 # Gaussian 2D Example
 
+A toy example showing Flower's conditional flow matching model on a 2D Gaussian mixture,
+useful for visualising trajectories and information flow without needing real data.
+
 To train the model run
 ```python
 python train.py
