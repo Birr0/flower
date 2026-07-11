@@ -27,9 +27,9 @@ def get_no_of_continuous_variables(y_catalog: dict) -> int:
     Get the context length for the flow model given dropped variables
     and the y_catalog.
     """
-    continuous_size = sum(y_catalog["variables"][v]["continuous"] for v in y_catalog["variables"])
+    continuous_size = sum(y_catalog["variables"][v].get("continuous", 0) for v in y_catalog["variables"])
     drop_size = sum(
-        y_catalog["variables"][v]["continuous"] for v in y_catalog["drop_variables"]
+        y_catalog["variables"][v].get("continuous", 0) for v in y_catalog["drop_variables"]
     )
     return int(continuous_size - drop_size)
 

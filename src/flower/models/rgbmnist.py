@@ -481,14 +481,20 @@ class LightningVAE(L.LightningModule):
 
     def base_step(self, batch, partition):
         output = self.vae(batch["X"])
-        # z = self.vae.reparametrize(output["mu"], output["log_var"])
+        if isinstance(output, tuple):
+            recon, z, mu, logvar = output
+            log_var = logvar
+        else:
+            recon = output["recon"]
+            mu = output["mu"]
+            log_var = output["log_var"]
         recon_loss = self.alpha * self.mse(
-            output["recon"], batch["X"], reduction="mean"
+            recon, batch["X"], reduction="mean"
         )
 
         kl_loss = torch.sum(
             -0.5
-            * (1 + output["log_var"] - output["log_var"].exp() - output["mu"].pow(2)),
+            * (1 + log_var - log_var.exp() - mu.pow(2)),
             axis=1,
         ).mean()
 
