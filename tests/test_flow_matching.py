@@ -1,4 +1,5 @@
 """Tests for the Flow model — LightningFlowMatching and VelocityField."""
+
 from __future__ import annotations
 
 import warnings
@@ -6,25 +7,28 @@ import warnings
 import pytest
 import torch
 import torch.nn as nn
-
 from flow_matching.solver import ODESolver
 
 from flower.models.dsprites import (
     LightningFlowMatching as LightningFlowMatchingDS,
+)
+from flower.models.dsprites import (
     VelocityField as VelocityFieldDS,
 )
 from flower.models.modules import WrappedModel
 from flower.models.rgbmnist import (
     LightningFlowMatching as LightningFlowMatchingRGB,
+)
+from flower.models.rgbmnist import (
     VelocityField as VelocityFieldRGB,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
 # ---------------------------------------------------------------------------
 
-@pytest.fixture()
+
+@pytest.fixture
 def catalog():
     return {
         "variables": {
@@ -35,13 +39,15 @@ def catalog():
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def base_model():
     """A minimal model with an encode method for LightningFlowMatching."""
+
     class MockBaseModel(nn.Module):
         def encode(self, x):
             b = x.shape[0]
             return x.clone(), torch.zeros(b, 64), torch.zeros(b, 64)
+
     return MockBaseModel()
 
 
@@ -53,9 +59,11 @@ def base_model():
 class TestVelocityField:
     """Tests for the VelocityField neural network."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def vf(self):
-        return VelocityFieldDS(code_dim=64, hidden_dim=64, conditional_dim=12, n_layers=2)
+        return VelocityFieldDS(
+            code_dim=64, hidden_dim=64, conditional_dim=12, n_layers=2
+        )
 
     def test_forward_shapes(self, vf):
         x_t = torch.randn(4, 64)
@@ -86,9 +94,11 @@ class TestVelocityField:
 class TestVelocityFieldRGB:
     """Tests for the RGBMNIST VelocityField."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def vf(self):
-        return VelocityFieldRGB(code_dim=64, hidden_dim=64, conditional_dim=12, n_hidden=2)
+        return VelocityFieldRGB(
+            code_dim=64, hidden_dim=64, conditional_dim=12, n_hidden=2
+        )
 
     def test_forward_shapes(self, vf):
         x_t = torch.randn(4, 64)
@@ -106,7 +116,7 @@ class TestVelocityFieldRGB:
 class TestLightningFlowMatching:
     """Smoke test for the dsprites LightningFlowMatching module."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def config(self, catalog, base_model):
         return {
             "base_model": base_model,
@@ -122,7 +132,7 @@ class TestLightningFlowMatching:
             "max_beta": 1.0,
         }
 
-    @pytest.fixture()
+    @pytest.fixture
     def flow(self, config):
         flow = LightningFlowMatchingDS(**config)
         # predict_step requires solver, which is normally created with ckpt_path
@@ -191,22 +201,25 @@ class TestLightningFlowMatching:
         flow.eval()
         batch = self._make_batch(flow)
         with torch.no_grad():
-            out = flow.predict_step(batch["X"], batch["y"], embed_opt=["orig", "cond", "uncond"])
+            out = flow.predict_step(
+                batch["X"], batch["y"], embed_opt=["orig", "cond", "uncond"]
+            )
         assert set(out.keys()) == {"orig", "cond", "uncond"}
 
 
 class TestLightningFlowMatchingRGB:
     """Smoke test for the RGBMNIST LightningFlowMatching module."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def base_model(self):
         class MockBaseModel(nn.Module):
             def encode(self, x):
                 b = x.shape[0]
                 return x.clone(), torch.zeros(b, 64), torch.zeros(b, 64)
+
         return MockBaseModel()
 
-    @pytest.fixture()
+    @pytest.fixture
     def config(self, base_model):
         return {
             "base_model": base_model,
@@ -229,7 +242,7 @@ class TestLightningFlowMatchingRGB:
             "max_beta": 1.0,
         }
 
-    @pytest.fixture()
+    @pytest.fixture
     def flow(self, config):
         flow = LightningFlowMatchingRGB(**config)
         flow.wrapped_vf = WrappedModel(flow.vf)

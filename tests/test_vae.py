@@ -1,18 +1,20 @@
 """Tests for the VAE model — BetaVAE and LightningVAE."""
+
 from __future__ import annotations
 
 import warnings
+
 import pytest
 import torch
 
 from flower.models.dsprites import BetaVAE, LightningBetaVAE
-from flower.models.rgbmnist import LightningVAE, VAE
+from flower.models.rgbmnist import VAE, LightningVAE
 
 
 class TestBetaVAE:
     """Tests for the BetaVAE architecture."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def model(self):
         return BetaVAE(latent_dim=10)
 
@@ -27,7 +29,7 @@ class TestBetaVAE:
         x = torch.randn(4, 1, 64, 64)
         out = model(x)
         # BetaVAE.forward returns (reconstruction, z, mu, logvar)
-        recon, z, mu, logvar = out
+        recon, z, mu, _logvar = out
         assert isinstance(recon, torch.Tensor)
         assert z.shape == (4, 10)
         assert mu.shape == (4, 10)
@@ -41,7 +43,7 @@ class TestBetaVAE:
 class TestVAE:
     """Tests for the VAE model (older version)."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def model(self):
         return VAE(hidden_dim=64)
 
@@ -67,11 +69,11 @@ class TestVAE:
 class TestLightningVAE:
     """Tests for LightningVAE — one training step only."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def vae_model(self):
         return BetaVAE(latent_dim=10)
 
-    @pytest.fixture()
+    @pytest.fixture
     def lightning_vae(self, vae_model):
         return LightningVAE(vae_model, lr=1e-3, batch_size=4, beta=1.0)
 
@@ -81,7 +83,7 @@ class TestLightningVAE:
         # Should be an optimizer instance
         assert hasattr(opt, "param_groups")
 
-    @pytest.fixture()
+    @pytest.fixture
     def vae_batch(self):
         """BetaVAE expects 64x64 grayscale images."""
         return {
@@ -128,15 +130,15 @@ class TestLightningVAE:
 class TestLightningBetaVAE:
     """Tests for LightningBetaVAE."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def vae_model(self):
         return BetaVAE(latent_dim=10)
 
-    @pytest.fixture()
+    @pytest.fixture
     def lightning_vae(self, vae_model):
         return LightningBetaVAE(vae_model, lr=1e-3, beta=1.0)
 
-    @pytest.fixture()
+    @pytest.fixture
     def vae_batch(self):
         return {
             "X": torch.randn(2, 1, 64, 64),

@@ -1,16 +1,17 @@
-"""Integration tests: Hydra config loading, data module instantiation, mini E2E training."""
+"""Integration tests: Hydra config loading, data module instantiation,
+mini E2E training.
+"""
+
 from __future__ import annotations
 
 import json
 import os
-import tempfile
 from pathlib import Path
 from unittest import mock
 
 import pytest
 import torch
 import torch.nn as nn
-from omegaconf import OmegaConf
 
 _ROOT = Path(__file__).resolve().parent.parent
 
@@ -90,7 +91,10 @@ def _build_dsprites_flow_config(overrides: dict | None = None) -> dict:
                 "transform": None,
                 "n_samples": 100,
             },
-            "loader": {"_target_": "flower.data.modules.FlowerDataLoader", "batch_size": 4},
+            "loader": {
+                "_target_": "flower.data.modules.FlowerDataLoader",
+                "batch_size": 4,
+            },
         },
         "lightning_loader": {
             "_target_": "flower.models.dsprites.LightningFlowMatching",
@@ -139,7 +143,10 @@ def _build_rgbmnist_flow_config(overrides: dict | None = None) -> dict:
                 "transform": None,
                 "n_samples": 100,
             },
-            "loader": {"_target_": "flower.data.modules.FlowerDataLoader", "batch_size": 256},
+            "loader": {
+                "_target_": "flower.data.modules.FlowerDataLoader",
+                "batch_size": 256,
+            },
         },
         "lightning_loader": {
             "_target_": "flower.models.rgbmnist.LightningFlowMatching",
@@ -176,13 +183,14 @@ def _set_nested(d: dict, key_path: str, value):
 
 def _make_mock_vf(base_model):
     """Create a minimal velocity field mock that matches the expected interface."""
+
     class MockVelocityField(nn.Module):
         def __init__(self, base_model):
             super().__init__()
             self.base_model = base_model
             self.code_dim = base_model.latent_dim
 
-        def encode(self, latents, mu, logvar):
+        def encode(self, mu, logvar):
             z_mu, z_logvar = mu, logvar
             return self.base_model(z_mu, z_logvar)
 
@@ -194,7 +202,7 @@ def _make_mock_vf(base_model):
 # ===========================================================================
 
 
-@pytest.fixture()
+@pytest.fixture
 def load_config():
     """Return a function to build experiment configs."""
 
@@ -206,7 +214,8 @@ def load_config():
         elif experiment == "dsprites_VAE":
             cfg = _build_dsprites_vae_config(overrides)
         else:
-            raise ValueError(f"Unknown experiment: {experiment}")
+            err = f"Unknown experiment: {experiment}"
+            raise ValueError(err)
         return cfg
 
     return _load
@@ -241,7 +250,10 @@ def _build_dsprites_vae_config(overrides: dict | None = None) -> dict:
                 "transform": None,
                 "n_samples": 100,
             },
-            "loader": {"_target_": "flower.data.modules.FlowerDataLoader", "batch_size": 4},
+            "loader": {
+                "_target_": "flower.data.modules.FlowerDataLoader",
+                "batch_size": 4,
+            },
         },
         "lightning_loader": {
             "_target_": "flower.models.dsprites.LightningVAE",
@@ -291,7 +303,6 @@ class TestDspritesFlowConfig:
 
         cfg = load_config("dsprites_Flow")
         catalog = cfg["data"]["y_catalog"]
-        base_model_cfg = cfg["lightning_loader"]["base_model"]
 
         # Build the mock encoder
         encoder = MockEncoder(latent_dim=64)
@@ -393,7 +404,9 @@ class TestConfigOverrides:
     """Integration tests for config override capability."""
 
     def test_override_hidden_dim(self, load_config):
-        cfg = load_config("dsprites_Flow", overrides={"lightning_loader.base_model.latent_dim": 32})
+        cfg = load_config(
+            "dsprites_Flow", overrides={"lightning_loader.base_model.latent_dim": 32}
+        )
         assert cfg["lightning_loader"]["base_model"]["latent_dim"] == 32
 
     def test_override_lr(self, load_config):
@@ -433,7 +446,7 @@ class TestDspritesVAEConfig:
         assert cfg["lightning_loader"] is not None
 
     def test_lightning_module_instantiates_no_ckpt(self, load_config):
-        from flower.models.dsprites import LightningBetaVAE, BetaVAE
+        from flower.models.dsprites import BetaVAE, LightningBetaVAE
 
         cfg = load_config("dsprites_VAE")
         vae_cfg = cfg["lightning_loader"]["vae"]
@@ -463,18 +476,12 @@ class TestDspritesDataModule:
         cfg = load_config("dsprites_Flow")
         assert cfg["data"]["x_ds"] is not None
 
-    def test_data_module_instantiates_with_mock_data(
-        self, load_config, mock_dsprites_env
-    ):
-        import json
-        from unittest import mock
-        from flower.data.modules import FlowerDataLoader
-
-        cfg = load_config("dsprites_Flow")
-
+    def test_data_module_instantiates_with_mock_data(self):
         # Create a minimal in-memory dataset for testing
         import torch
         from torch.utils.data import Dataset
+
+        from flower.data.modules import FlowerDataLoader
 
         class DummyDataset(Dataset):
             def __init__(self, size=4):
@@ -498,16 +505,12 @@ class TestDspritesDataModule:
         )
         assert hasattr(data_module, "train_dataloader")
 
-    def test_data_module_setup(self, load_config, mock_dsprites_env):
-        import json
-        from unittest import mock
-        from flower.data.modules import FlowerDataLoader
-
-        cfg = load_config("dsprites_Flow")
-
+    def test_data_module_setup(self):
         # Create a minimal in-memory dataset for testing
         import torch
         from torch.utils.data import Dataset
+
+        from flower.data.modules import FlowerDataLoader
 
         class DummyDataset(Dataset):
             def __init__(self, size=4):
@@ -554,9 +557,11 @@ class TestRgbmnistDataModule:
 
 
 class TestMiniE2EDspritesFlow:
-    """Mini E2E: one training step through Lightning Trainer with dsprites_Flow config."""
+    """Mini E2E: one training step through Lightning Trainer
+    with dsprites_Flow config.
+    """
 
-    @pytest.fixture()
+    @pytest.fixture
     def dummy_batch_dsprites(self):
         """Create a minimal batch matching dsprites catalog structure (7-dim y)."""
         batch_size = 4
@@ -575,8 +580,8 @@ class TestMiniE2EDspritesFlow:
             },
         }
 
-    @pytest.fixture()
-    def model(self, load_config, mock_dsprites_env):
+    @pytest.fixture
+    def model(self, load_config):
         from flower.models.dsprites import LightningFlowMatching
 
         cfg = load_config("dsprites_Flow")
@@ -584,7 +589,7 @@ class TestMiniE2EDspritesFlow:
 
         encoder = MockEncoder(latent_dim=64)
 
-        model = LightningFlowMatching(
+        return LightningFlowMatching(
             base_model=encoder,
             lr=cfg["lightning_loader"]["lr"],
             batch_size=4,
@@ -593,7 +598,6 @@ class TestMiniE2EDspritesFlow:
             catalog=catalog,
             n_layers=4,
         )
-        return model
 
     def test_one_training_step(self, model, dummy_batch_dsprites):
         """Run one training_step and verify loss is computed."""
@@ -627,7 +631,9 @@ class TestMiniE2EDspritesFlow:
             )
         assert "orig" in out
 
-    @pytest.mark.skip(reason="predict_step with cond/uncond requires solver which needs a checkpoint")
+    @pytest.mark.skip(
+        reason="predict_step with cond/uncond requires solver which needs a checkpoint"
+    )
     def test_predict_step_cond(self, model, dummy_batch_dsprites):
         model.eval()
         with torch.no_grad():
@@ -638,7 +644,9 @@ class TestMiniE2EDspritesFlow:
             )
         assert "cond" in out
 
-    @pytest.mark.skip(reason="predict_step with cond/uncond requires solver which needs a checkpoint")
+    @pytest.mark.skip(
+        reason="predict_step with cond/uncond requires solver which needs a checkpoint"
+    )
     def test_predict_step_uncond(self, model, dummy_batch_dsprites):
         model.eval()
         with torch.no_grad():
@@ -649,7 +657,9 @@ class TestMiniE2EDspritesFlow:
             )
         assert "uncond" in out
 
-    @pytest.mark.skip(reason="predict_step with cond/uncond requires solver which needs a checkpoint")
+    @pytest.mark.skip(
+        reason="predict_step with cond/uncond requires solver which needs a checkpoint"
+    )
     def test_predict_step_multi(self, model, dummy_batch_dsprites):
         model.eval()
         with torch.no_grad():
@@ -660,36 +670,40 @@ class TestMiniE2EDspritesFlow:
             )
         assert set(out.keys()) == {"orig", "cond", "uncond"}
 
-    def test_trainer_can_instantiate(self, load_config, mock_dsprites_env):
+    def test_trainer_can_instantiate(self):
         """Verify the Trainer config can be built (without actually training)."""
+        import warnings
+
         from lightning.pytorch import Trainer
 
-        cfg = load_config("dsprites_Flow")
-        trainer_cfg = cfg["trainer"]
-
-        # Only pass kwargs that don't require Hydra resolution
-        trainer = Trainer(
-            accelerator="cpu",
-            max_epochs=1,
-            limit_train_batches=1,
-            limit_val_batches=1,
-            enable_progress_bar=False,
-            enable_checkpointing=False,
-            logger=False,
-            devices=1,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            trainer = Trainer(
+                accelerator="cpu",
+                max_epochs=1,
+                limit_train_batches=1,
+                limit_val_batches=1,
+                enable_progress_bar=False,
+                enable_checkpointing=False,
+                logger=False,
+                devices=1,
+            )
         assert trainer is not None
 
 
 class TestMiniE2ERgbmnistFlow:
-    """Mini E2E: one training step through Lightning Trainer with rgbmnist_Flow config."""
+    """Mini E2E: one training step through Lightning Trainer
+    with rgbmnist_Flow config.
+    """
 
-    @pytest.fixture()
+    @pytest.fixture
     def dummy_batch_rgb(self):
         batch_size = 4
         return {
             "X": torch.randn(batch_size, 3, 28, 28),
-            "y": torch.randn(batch_size, 13),  # r(1)+g(1)+digit(10)+label(1)=13, b(1) dropped
+            "y": torch.randn(
+                batch_size, 13
+            ),  # r(1)+g(1)+digit(10)+label(1)=13, b(1) dropped
             "catalog": {
                 "r": torch.zeros(batch_size, 1),
                 "g": torch.zeros(batch_size, 1),
@@ -698,7 +712,7 @@ class TestMiniE2ERgbmnistFlow:
             },
         }
 
-    @pytest.fixture()
+    @pytest.fixture
     def model(self, load_config):
         from flower.models.rgbmnist import LightningFlowMatching
 
@@ -707,7 +721,7 @@ class TestMiniE2ERgbmnistFlow:
 
         encoder = MockRGBEncoder(latent_dim=64)
 
-        model = LightningFlowMatching(
+        return LightningFlowMatching(
             base_model=encoder,
             lr=cfg["lightning_loader"]["lr"],
             batch_size=4,
@@ -715,7 +729,6 @@ class TestMiniE2ERgbmnistFlow:
             hidden_dim=64,
             catalog=catalog,
         )
-        return model
 
     def test_one_training_step(self, model, dummy_batch_rgb):
         import warnings
@@ -779,7 +792,7 @@ class TestConfigRobustness:
 # ===========================================================================
 
 
-@pytest.fixture()
+@pytest.fixture
 def tmp_dsprites_data(tmp_path):
     """Create a temporary directory with minimal dsprites-dataset files."""
     data_dir = tmp_path / "data" / "dsprites-dataset"
@@ -810,7 +823,9 @@ def tmp_dsprites_data(tmp_path):
         inner = pa.list_(pa.float32(), 1)
         outer = pa.list_(inner, 64)
         img_type = pa.list_(outer)
-        img_array = pa.array([[[[0.5] for _ in range(64)] for _ in range(64)]], type=img_type)
+        img_array = pa.array(
+            [[[[0.5] for _ in range(64)] for _ in range(64)]], type=img_type
+        )
         table = pa.table(
             {
                 "image": img_array,
@@ -830,8 +845,10 @@ def tmp_dsprites_data(tmp_path):
     return data_dir.parent
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_dsprites_env(tmp_dsprites_data):
     """Mock the DATA_ROOT env-var so that `load_from_disk` points at tmp data."""
-    with mock.patch.dict(os.environ, {"DATA_ROOT": str(tmp_dsprites_data.parent)}, clear=False):
+    with mock.patch.dict(
+        os.environ, {"DATA_ROOT": str(tmp_dsprites_data.parent)}, clear=False
+    ):
         yield tmp_dsprites_data

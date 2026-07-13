@@ -1,4 +1,5 @@
 """Tests for flower.data.augmentations — ImageAugmentation."""
+
 from __future__ import annotations
 
 import torch

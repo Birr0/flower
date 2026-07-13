@@ -1,7 +1,7 @@
 """Tests for flower.data.modules — FlowerDataset, FlowerDataLoader."""
+
 from __future__ import annotations
 
-import pytest
 import torch
 
 from flower.data.modules import FlowerDataLoader, FlowerDataset
@@ -93,8 +93,12 @@ class TestFlowerDataLoader:
 
     def _make_dm(self, return_catalog=True, n=8, val_split=0.25, channels=1):
         """Helper to create a FlowerDataModule with the dummy dataset."""
-        train_ds = FlowerDataset(_DummyDataset(n=n, channels=channels), return_catalog=return_catalog)
-        test_ds = FlowerDataset(_DummyDataset(n=n, channels=channels), return_catalog=return_catalog)
+        train_ds = FlowerDataset(
+            _DummyDataset(n=n, channels=channels), return_catalog=return_catalog
+        )
+        test_ds = FlowerDataset(
+            _DummyDataset(n=n, channels=channels), return_catalog=return_catalog
+        )
         dm = FlowerDataLoader(
             datasets={"train": train_ds, "val": None, "test": test_ds},
             batch_size=4,

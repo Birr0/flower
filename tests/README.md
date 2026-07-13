@@ -1,4 +1,4 @@
-# Running unit tests 
+# Running unit tests
 
 Full suite:
 bash

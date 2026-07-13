@@ -1,4 +1,5 @@
 """Tests for flower.models.modules — model utility classes and functions."""
+
 from __future__ import annotations
 
 import pytest
@@ -7,15 +8,13 @@ import torch.nn as nn
 
 from flower.models.modules import (
     AdaLN,
-    BaseModel,
-    ConditionEmbedder,
     ConditionalPrior,
+    ConditionEmbedder,
     TimestepEmbedder,
     WrappedModel,
     get_conditional_len,
     get_no_of_continuous_variables,
 )
-
 
 # ---------------------------------------------------------------------------
 # Catalog helpers
@@ -163,12 +162,14 @@ class TestAdaLN:
 class TestWrappedModel:
     """Test classifier-free guidance wrapper."""
 
-    @pytest.fixture()
+    @pytest.fixture
     def mock_velocity_model(self):
-        """A minimal nn.Module that accepts x_t, t, y kwargs like the real velocity models.
+        """A minimal nn.Module that accepts x_t, t, y kwargs
+        like the real velocity models.
 
         The forward method combines x_t and y so CFG scaling actually changes outputs.
         """
+
         class MockVelocityModel(nn.Module):
             def __init__(self):
                 super().__init__()
@@ -184,7 +185,7 @@ class TestWrappedModel:
                 )
                 self.null_y = nn.Embedding(1, 12)
 
-            def forward(self, x_t, t, y=None):
+            def forward(self, x_t, t, y=None):  # noqa: ARG002 - t unused but required by real interface
                 if y is not None:
                     return self.net_cond(torch.cat([x_t, y], dim=1))
                 return self.net_uncond(x_t)
