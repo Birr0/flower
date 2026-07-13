@@ -286,7 +286,7 @@ class Augmentation:
             """
             Go through the defined distributions and apply them
             """
-            X, affine_values = self.apply_affine(X, self.affine)
+            _, _ = self.apply_affine(X, self.affine)
 
         if self.zoom:
             X = self.apply_zoom(X)

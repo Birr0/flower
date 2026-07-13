@@ -243,6 +243,7 @@ def create_info_file(cfg, job_id, job_num, dir_path):
 
     return
 
+
 def run_test(test, data):
     model = hydra.utils.instantiate(test.model)
     X = np.array(data[test.variables.X])

@@ -11,6 +11,7 @@ from flower.training.modules import track_weights
 
 log = logging.getLogger(__name__)
 
+
 @hydra.main(
     version_base=None,
     config_path="../../conf",

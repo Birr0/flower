@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
+import torch.distributions as d
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # ---------------------------------------------------------------------------
 # Device
@@ -196,8 +199,6 @@ def tmp_checkpoint_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def uniform_dist():
-    import torch.distributions as d
-
     return d.Uniform(low=0.05, high=0.95)
 
 
@@ -209,8 +210,6 @@ def uniform_dist():
 @pytest.fixture
 def dummy_sklearn_mlp():
     """A small MLPClassifier for classification evaluation tests."""
-    from sklearn.neural_network import MLPClassifier
-
     return MLPClassifier(
         hidden_layer_sizes=(16, 8),
         max_iter=10,
@@ -223,8 +222,6 @@ def dummy_sklearn_mlp():
 @pytest.fixture
 def dummy_sklearn_mlp_regressor():
     """A small MLPRegressor for regression evaluation tests."""
-    from sklearn.neural_network import MLPRegressor
-
     return MLPRegressor(
         hidden_layer_sizes=(16, 8),
         max_iter=10,
@@ -237,8 +234,6 @@ def dummy_sklearn_mlp_regressor():
 @pytest.fixture
 def dummy_classification_data():
     """Simple classification data (X, y) for metrics tests."""
-    import numpy as np
-
     rng = np.random.RandomState(42)
     X_train = rng.randn(32, 8)
     y_train = rng.randint(0, 3, size=32)
@@ -250,8 +245,6 @@ def dummy_classification_data():
 @pytest.fixture
 def dummy_regression_data():
     """Simple regression data (X, y) for metrics tests."""
-    import numpy as np
-
     rng = np.random.RandomState(42)
     X_train = rng.randn(32, 8)
     y_train = rng.randn(32)
@@ -268,8 +261,6 @@ def dummy_regression_data():
 @pytest.fixture
 def dummy_prediction_dict():
     """A minimal predictions dict as returned by a Lightning step."""
-    import torch
-
     return {
         "X": torch.randn(4, 1, 8, 8),
         "y": torch.randn(4, 12),
@@ -286,8 +277,6 @@ def dummy_prediction_dict():
 @pytest.fixture
 def dummy_samples_dict():
     """A minimal samples dict as returned by a sampling step (includes z_prime)."""
-    import torch
-
     return {
         "X": torch.randn(4, 1, 8, 8),
         "y": torch.randn(4, 12),

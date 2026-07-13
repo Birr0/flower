@@ -15,7 +15,7 @@ defaults:
 hydra:
   sweeper:
     params:
-      ++data.y_catalog.drop_variables: ${....sweeps.drop_variables.0} 
+      ++data.y_catalog.drop_variables: ${....sweeps.drop_variables.0}
       +seed: ${....sweeps.seeds.0} #, ${....sweeps.seeds.1}, ${....sweeps.seeds.2}
 
 trainer:

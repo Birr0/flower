@@ -1,13 +1,9 @@
 import os
 
-import lightning as L
 import torch
-import torch.nn.functional as F
-from sklearn.model_selection import train_test_split  # type: ignore[import-untyped]
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import Dataset
 from torchvision import datasets, transforms  # type: ignore[import-untyped]
 
-from flower.data.augmentations import FlipAndRotate
 
 class RGBMNIST(Dataset):
     def __init__(self, y_catalog, train, x_ds):

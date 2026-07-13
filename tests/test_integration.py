@@ -6,12 +6,20 @@ from __future__ import annotations
 
 import json
 import os
+import warnings
 from pathlib import Path
 from unittest import mock
 
+import pyarrow as pa
+import pyarrow.parquet as pq
 import pytest
 import torch
 import torch.nn as nn
+from lightning.pytorch import Trainer
+from torch.utils.data import Dataset
+
+from flower.data.modules import FlowerDataLoader
+from flower.models.dsprites import BetaVAE, LightningBetaVAE, LightningFlowMatching
 
 _ROOT = Path(__file__).resolve().parent.parent
 
@@ -299,8 +307,6 @@ class TestDspritesFlowConfig:
         assert len(cat["variables"]) == 10  # 6 actual + 3 dropped + 1 cos
 
     def test_lightning_module_instantiates(self, load_config):
-        from flower.models.dsprites import LightningFlowMatching
-
         cfg = load_config("dsprites_Flow")
         catalog = cfg["data"]["y_catalog"]
 
@@ -321,8 +327,6 @@ class TestDspritesFlowConfig:
         assert hasattr(model, "configure_optimizers")
 
     def test_optimizer_configures(self, load_config):
-        from flower.models.dsprites import LightningFlowMatching
-
         cfg = load_config("dsprites_Flow")
         catalog = cfg["data"]["y_catalog"]
 
@@ -362,8 +366,6 @@ class TestRgbmnistFlowConfig:
         assert sum(cat["variables"][v]["size"] for v in cat["drop_variables"]) == 1
 
     def test_lightning_module_instantiates(self, load_config):
-        from flower.models.rgbmnist import LightningFlowMatching
-
         cfg = load_config("rgbmnist_Flow")
         catalog = cfg["data"]["y_catalog"]
 
@@ -381,8 +383,6 @@ class TestRgbmnistFlowConfig:
         assert hasattr(model, "configure_optimizers")
 
     def test_optimizer_configures(self, load_config):
-        from flower.models.rgbmnist import LightningFlowMatching
-
         cfg = load_config("rgbmnist_Flow")
         catalog = cfg["data"]["y_catalog"]
 
@@ -414,8 +414,6 @@ class TestConfigOverrides:
         assert cfg["lightning_loader"]["lr"] == 0.01
 
     def test_model_uses_overridden_lr(self, load_config):
-        from flower.models.dsprites import LightningFlowMatching
-
         cfg = load_config("dsprites_Flow", overrides={"lightning_loader.lr": 0.05})
         catalog = cfg["data"]["y_catalog"]
 
@@ -446,8 +444,6 @@ class TestDspritesVAEConfig:
         assert cfg["lightning_loader"] is not None
 
     def test_lightning_module_instantiates_no_ckpt(self, load_config):
-        from flower.models.dsprites import BetaVAE, LightningBetaVAE
-
         cfg = load_config("dsprites_VAE")
         vae_cfg = cfg["lightning_loader"]["vae"]
 
@@ -477,12 +473,6 @@ class TestDspritesDataModule:
         assert cfg["data"]["x_ds"] is not None
 
     def test_data_module_instantiates_with_mock_data(self):
-        # Create a minimal in-memory dataset for testing
-        import torch
-        from torch.utils.data import Dataset
-
-        from flower.data.modules import FlowerDataLoader
-
         class DummyDataset(Dataset):
             def __init__(self, size=4):
                 self.size = size
@@ -506,12 +496,6 @@ class TestDspritesDataModule:
         assert hasattr(data_module, "train_dataloader")
 
     def test_data_module_setup(self):
-        # Create a minimal in-memory dataset for testing
-        import torch
-        from torch.utils.data import Dataset
-
-        from flower.data.modules import FlowerDataLoader
-
         class DummyDataset(Dataset):
             def __init__(self, size=4):
                 self.size = size
@@ -582,8 +566,6 @@ class TestMiniE2EDspritesFlow:
 
     @pytest.fixture
     def model(self, load_config):
-        from flower.models.dsprites import LightningFlowMatching
-
         cfg = load_config("dsprites_Flow")
         catalog = cfg["data"]["y_catalog"]
 
@@ -600,9 +582,6 @@ class TestMiniE2EDspritesFlow:
         )
 
     def test_one_training_step(self, model, dummy_batch_dsprites):
-        """Run one training_step and verify loss is computed."""
-        import warnings
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             loss = model.training_step(dummy_batch_dsprites, 0)
@@ -612,8 +591,6 @@ class TestMiniE2EDspritesFlow:
 
     def test_one_validation_step(self, model, dummy_batch_dsprites):
         """Run one validation_step and verify loss is computed."""
-        import warnings
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             loss = model.validation_step(dummy_batch_dsprites, 0)
@@ -672,10 +649,6 @@ class TestMiniE2EDspritesFlow:
 
     def test_trainer_can_instantiate(self):
         """Verify the Trainer config can be built (without actually training)."""
-        import warnings
-
-        from lightning.pytorch import Trainer
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             trainer = Trainer(
@@ -714,8 +687,6 @@ class TestMiniE2ERgbmnistFlow:
 
     @pytest.fixture
     def model(self, load_config):
-        from flower.models.rgbmnist import LightningFlowMatching
-
         cfg = load_config("rgbmnist_Flow")
         catalog = cfg["data"]["y_catalog"]
 
@@ -731,8 +702,6 @@ class TestMiniE2ERgbmnistFlow:
         )
 
     def test_one_training_step(self, model, dummy_batch_rgb):
-        import warnings
-
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             loss = model.training_step(dummy_batch_rgb, 0)
@@ -761,8 +730,6 @@ class TestConfigRobustness:
 
     def test_model_ignores_null_data_path(self, load_config):
         """The experiment config may reference paths that don't exist locally."""
-        from flower.models.dsprites import LightningFlowMatching
-
         cfg = load_config("dsprites_Flow")
         catalog = cfg["data"]["y_catalog"]
 
@@ -815,11 +782,8 @@ def tmp_dsprites_data(tmp_path):
     }
     features_file.write_text(json.dumps(features))
 
-    # Minimal parquet file with 1 sample (if pyarrow is available)
+    # Minimal parquet file with 1 sample
     try:
-        import pyarrow as pa
-        import pyarrow.parquet as pq
-
         inner = pa.list_(pa.float32(), 1)
         outer = pa.list_(inner, 64)
         img_type = pa.list_(outer)

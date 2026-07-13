@@ -15,7 +15,7 @@ lightning_loader:
   max_beta: 1.0
   n_steps: 20
 
-model_checkpoint: 
+model_checkpoint:
   _target_: lightning.pytorch.callbacks.ModelCheckpoint
   dirpath: ${paths.experiment_path}/ckpts/
   save_top_k: 1

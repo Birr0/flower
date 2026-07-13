@@ -1,33 +1,16 @@
-import math 
-
 import lightning as L
 import torch
-import torch.nn.functional as F
-import torch.distributions as D
 import torch.nn as nn
-from flow_matching.path import AffineProbPath
-from flow_matching.path.scheduler import CondOTScheduler
-from flow_matching.solver import ODESolver
-from flow_matching.utils import ModelWrapper, gradient
-from timm.models.layers import trunc_normal_
-from torch import Tensor
-from huggingface_hub import PyTorchModelHubMixin
-
-from flower.models.modules import get_conditional_len, BaseModel, AdaLN, TimestepEmbedder, \
-    WrappedModel, ConditionEmbedder, ConditionalPrior
+from timm.layers import trunc_normal_
 
 
 class LightningModel(L.LightningModule):
-    def __init__(
-        self,
-        model,
-        lr
-    ):
+    def __init__(self, model: nn.Module, lr: float):
         super().__init__()
-        self.model = model 
+        self.model = model
         self.lr = lr
 
-    def _init_weights(self, m):
+    def _init_weights(self, m: nn.Module) -> None:
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=0.02)
             nn.init.constant_(m.bias, 0)
@@ -39,18 +22,18 @@ class LightningModel(L.LightningModule):
             lr=self.lr,
         )
 
-    def training_step(self, batch, _batch_idx):
-        # training logic
+    def training_step(self, _batch, _batch_idx: int) -> None:
+        # training logic
         return
 
-    def validation_step(self, batch, _batch_idx):
+    def validation_step(self, _batch, _batch_idx: int) -> None:
         # val logic
-        return 
-
-    def test_step(self, batch, _batch_idx):
-        # test logic
         return
 
-    def predict_step(self, batch):
-        # inference logic
+    def test_step(self, _batch, _batch_idx: int) -> None:  # noqa: PT019
+        # test logic
+        return
+
+    def predict_step(self, _batch) -> None:
+        # inference logic
         return

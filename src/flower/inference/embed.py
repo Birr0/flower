@@ -1,18 +1,16 @@
 import logging
 import os
-from pathlib import Path 
+from pathlib import Path
 
 import hydra
-from datasets import concatenate_datasets
-from hydra.core.global_hydra import GlobalHydra
-from lightning.pytorch import seed_everything
 import pyarrow as pa
 import pyarrow.parquet as pq
+from hydra.core.global_hydra import GlobalHydra
+from lightning.pytorch import seed_everything
 
 from flower.inference.modules import (
     create_lightning_loader,
-    create_timestep_embeddings,
-    wandb_format
+    wandb_format,
 )
 
 log = logging.getLogger(__name__)
@@ -83,15 +81,13 @@ def main(cfg):
                     break
                 try:
                     predictions = lightning_loader.predict_step(
-                        batch["X"], 
-                        batch["y"],
-                        embed_opt=cfg.embed_opt
+                        batch["X"], batch["y"], embed_opt=cfg.embed_opt
                     )
                     data = {k: v.tolist() for k, v in predictions.items()}
-                    data["y"] = batch["y"].tolist() 
+                    data["y"] = batch["y"].tolist()
 
                     for k, v in batch["catalog"].items():
-                        data[k] = v.tolist()    
+                        data[k] = v.tolist()
 
                     path = Path(cfg.paths.embed_dir + f"{model_id}/{name}/")
                     if not path.exists():
@@ -99,12 +95,12 @@ def main(cfg):
 
                     pq.write_table(pa.table(data), path / f"{idx}.parquet")
 
-                    '''
+                    """
                     embeddings.append(
                         # create_embeddings(predictions, name) # _timestep
                         create_embeddings(predictions, name)
-                    ) 
-                    '''
+                    )
+                    """
                 except Exception as e:
                     msg = f"Error creating embeddings: {e}"
                     log.error(msg)
@@ -114,7 +110,7 @@ def main(cfg):
                 if not os.path.exists(cfg.paths.embed_dir):
                     os.makedirs(cfg.paths.embed_dir)
 
-                embed_dir = cfg.paths.embed_dir + f"/{model_id}/{name}"
+                _embed_dir = cfg.paths.embed_dir + f"/{model_id}/{name}"
 
             except Exception as e:
                 msg = f"Error saving embeddings: {e}"
@@ -142,6 +138,7 @@ def main(cfg):
 
     log.info("Inference complete.")
     return
+
 
 if __name__ == "__main__":
     GlobalHydra.instance().clear()
