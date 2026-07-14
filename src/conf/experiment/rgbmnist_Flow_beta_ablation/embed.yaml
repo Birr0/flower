@@ -19,12 +19,12 @@ splits:
   - train
   - test
   #- val
-  
+
 embed_opt:
   - "orig"
   - "cond"
   - "uncond"
-  
+
 batch_limit: null
 
 logger:

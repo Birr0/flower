@@ -1,20 +1,24 @@
-import math 
-
 import lightning as L
 import torch
-import torch.nn.functional as F
-import torch.distributions as D
 import torch.nn as nn
+import torch.nn.functional as F
 from flow_matching.path import AffineProbPath
 from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
-from flow_matching.utils import ModelWrapper, gradient
+from huggingface_hub import PyTorchModelHubMixin
 from timm.models.layers import trunc_normal_
 from torch import Tensor
-from huggingface_hub import PyTorchModelHubMixin
 
-from flower.models.modules import get_conditional_len, BaseModel, AdaLN, TimestepEmbedder, \
-    WrappedModel, ConditionEmbedder, ConditionalPrior
+from flower.models.modules import (
+    AdaLN,
+    BaseModel,
+    ConditionalPrior,
+    ConditionEmbedder,
+    TimestepEmbedder,
+    WrappedModel,
+    get_conditional_len,
+)
+
 
 class VelocityField(nn.Module, PyTorchModelHubMixin):
     def __init__(self, code_dim, hidden_dim, conditional_dim, n_hidden=3):
@@ -32,22 +36,18 @@ class VelocityField(nn.Module, PyTorchModelHubMixin):
         self.linears = nn.ModuleList(
             [nn.Linear(hidden_dim, hidden_dim) for _ in range(n_hidden)]
         )
-        self.out_proj = nn.Linear(hidden_dim, code_dim) 
+        self.out_proj = nn.Linear(hidden_dim, code_dim)
 
-        self.cond_embed = ConditionEmbedder(
-            conditional_dim, hidden_dim
-        )
+        self.cond_embed = ConditionEmbedder(conditional_dim, hidden_dim)
         self.null_y = nn.Embedding(
             num_embeddings=1,
             embedding_dim=conditional_dim,
         )
 
         self.conditional_prior = ConditionalPrior(
-            cond_dim=conditional_dim,
-            hidden_dim=hidden_dim,
-            code_dim=code_dim
+            cond_dim=conditional_dim, hidden_dim=hidden_dim, code_dim=code_dim
         )
-        # parameter for y embeddings
+        # parameter for y embeddings
 
     def forward(self, x_t: Tensor, t: Tensor, y: Tensor):
         t_embed = self.t_embedder(t).flatten(start_dim=1)
@@ -56,12 +56,13 @@ class VelocityField(nn.Module, PyTorchModelHubMixin):
         x = self.input_proj(x_t)
         c = t_embed + y_embed
 
-        for adaln, lin in zip(self.ada_lns, self.linears):
+        for adaln, lin in zip(self.ada_lns, self.linears, strict=False):
             identity = x
-            modulated, gate = adaln(x, c) # replace with c here.
+            modulated, gate = adaln(x, c)  # replace with c here.
             x = self.act(lin(modulated))
-            x = identity + gate*x
+            x = identity + gate * x
         return self.out_proj(x)
+
 
 class LightningFlowMatching(L.LightningModule):
     def __init__(
@@ -73,12 +74,12 @@ class LightningFlowMatching(L.LightningModule):
         hidden_dim,
         catalog,
         n_steps=20,
-        ckpt_path: str = None,
+        ckpt_path: str | None = None,
         method="midpoint",
         base_model_ckpt_path=None,
         beta_start_step=0,
         beta_warmup_steps=10000,
-        max_beta=1.0
+        max_beta=1.0,
     ):
         super().__init__()
 
@@ -90,7 +91,7 @@ class LightningFlowMatching(L.LightningModule):
 
         self.beta_start_step = beta_start_step
         self.beta_warmup_steps = beta_warmup_steps
-        self.max_beta = max_beta 
+        self.max_beta = max_beta
 
         # --- Models --- #
         self.vf = VelocityField(code_dim, hidden_dim, self.cond_dim)
@@ -98,20 +99,18 @@ class LightningFlowMatching(L.LightningModule):
         self.base_model = base_model
 
         if base_model_ckpt_path:
-            base_model_state_dict = torch.load(base_model_ckpt_path)[
-                "state_dict"
-            ] 
+            base_model_state_dict = torch.load(base_model_ckpt_path)["state_dict"]
             base_model_state_dict = {
                 k.replace("vae.", "", 1): v for k, v in base_model_state_dict.items()
             }
             # drop any encoder 0 blocks
             # or don't enforce strict here.
-            
-            self.base_model.load_state_dict(base_model_state_dict, strict=False) # 
+
+            self.base_model.load_state_dict(base_model_state_dict, strict=False)  #
             print("✅ Base model weights loaded.")
 
         # 2. Freeze the base model
-        self.base_model.eval() # Set to evaluation mode
+        self.base_model.eval()  # Set to evaluation mode
         for param in self.base_model.parameters():
             param.requires_grad = False
         print("❄️ Base model frozen.")
@@ -130,12 +129,12 @@ class LightningFlowMatching(L.LightningModule):
             self.wrapped_vf = WrappedModel(self.vf)
         self.path = AffineProbPath(scheduler=CondOTScheduler())
         self.method = method
-        self.step_size = 1./n_steps
+        self.step_size = 1.0 / n_steps
 
     @property
     def T(self):
-        return torch.tensor([1., 0.], device=self.device)
-        #torch.linspace(1, 0, self.n_steps, device=self.device)
+        return torch.tensor([1.0, 0.0], device=self.device)
+        # torch.linspace(1, 0, self.n_steps, device=self.device)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -149,7 +148,7 @@ class LightningFlowMatching(L.LightningModule):
             params,
             lr=self.lr,
         )
-    
+
     def get_beta(self):
         if self.global_step < self.beta_start_step:
             return 0.0
@@ -165,9 +164,7 @@ class LightningFlowMatching(L.LightningModule):
         x_1, _, _ = self.base_model.encode(X)
         batch_size = x_1.shape[0]
 
-        mu_model, log_var = self.vf.conditional_prior(
-            y
-        )
+        mu_model, log_var = self.vf.conditional_prior(y)
         eps = torch.randn_like(x_1)
         x_0_cond = mu_model + torch.exp(0.5 * log_var) * eps
 
@@ -175,25 +172,25 @@ class LightningFlowMatching(L.LightningModule):
 
         x_1 = torch.cat([x_1, x_1], dim=0)
         x_0 = torch.cat([x_0_cond, x_0_uncond], dim=0)
-        
+
         null_idx = torch.zeros(batch_size, dtype=torch.long, device=y.device)
-        y_null = self.vf.null_y(null_idx) 
+        y_null = self.vf.null_y(null_idx)
         y = torch.cat([y, y_null], dim=0)
 
         t = torch.rand(batch_size, device=x_1.device).unsqueeze(-1)
         t = torch.cat([t, t], dim=0)
-        x_t = t*x_1 + (1 - t)*x_0
+        x_t = t * x_1 + (1 - t) * x_0
 
         v_t = self.vf(x_t=x_t, y=y, t=t)
         v_tgt = x_1 - x_0
 
-        cfm_loss = torch.pow(
-            v_t - v_tgt, 2
-        ).mean()
+        cfm_loss = torch.pow(v_t - v_tgt, 2).mean()
 
-        kl_loss = (0.5 * torch.sum(torch.exp(log_var) + mu_model**2 - 1 - log_var, dim=-1)).mean()
+        kl_loss = (
+            0.5 * torch.sum(torch.exp(log_var) + mu_model**2 - 1 - log_var, dim=-1)
+        ).mean()
         beta = self.get_beta()
-        loss = cfm_loss + beta*kl_loss
+        loss = cfm_loss + beta * kl_loss
 
         self.log(f"{partition}_loss", loss)
         self.log(f"{partition}_cfm_loss", cfm_loss)
@@ -207,17 +204,19 @@ class LightningFlowMatching(L.LightningModule):
     def validation_step(self, batch, _batch_idx):
         return self.base_step(batch, "val")
 
-    def test_step(self, batch, _batch_idx):
+    def test_step(self, batch, _batch_idx: int):  # noqa: PT019
         return self.base_step(batch, "test")
 
-    def predict_step(self, X, y, embed_opt=["cond"]):
+    def predict_step(self, X, y, embed_opt=None):
+        if embed_opt is None:
+            embed_opt = ["cond"]
         self.eval()
         with torch.no_grad():
             output = {}
             code, _, _ = self.base_model.encode(X)
             if "orig" in embed_opt:
                 output["orig"] = code
-            
+
             # could reduce this to a single forward pass.
             if "cond" in embed_opt:
                 output["cond"] = self.solver.sample(
@@ -440,7 +439,6 @@ class VAE(nn.Module):
 
         x = self.project_to_z_dist(x)
 
-
         # sample from the latent network
         mu, log_var = x.chunk(2, dim=-1)
         log_var = torch.clamp(log_var, -30.0, 20.0)
@@ -454,6 +452,7 @@ class VAE(nn.Module):
             x = block(x)
         x = x.view(x.size(0), 3, 28, 28)
         return {"z": z, "recon": x, "mu": mu, "log_var": log_var}
+
 
 class LightningVAE(L.LightningModule):
     def __init__(self, vae, lr, batch_size, beta, vae_ckpt_path=None, ckpt_path=None):
@@ -470,9 +469,7 @@ class LightningVAE(L.LightningModule):
         self.alpha = torch.tensor(100.0)  # recon loss weight
 
         if vae_ckpt_path:
-            state_dict = torch.load(
-                vae_ckpt_path
-            )["state_dict"]
+            state_dict = torch.load(vae_ckpt_path)["state_dict"]
             state_dict = {k.replace("vae.", "", 1): v for k, v in state_dict.items()}
             self.vae.load_state_dict(state_dict, strict=False)
 
@@ -481,14 +478,17 @@ class LightningVAE(L.LightningModule):
 
     def base_step(self, batch, partition):
         output = self.vae(batch["X"])
-        # z = self.vae.reparametrize(output["mu"], output["log_var"])
-        recon_loss = self.alpha * self.mse(
-            output["recon"], batch["X"], reduction="mean"
-        )
+        if isinstance(output, tuple):
+            recon, _, mu, logvar = output
+            log_var = logvar
+        else:
+            recon = output["recon"]
+            mu = output["mu"]
+            log_var = output["log_var"]
+        recon_loss = self.alpha * self.mse(recon, batch["X"], reduction="mean")
 
         kl_loss = torch.sum(
-            -0.5
-            * (1 + output["log_var"] - output["log_var"].exp() - output["mu"].pow(2)),
+            -0.5 * (1 + log_var - log_var.exp() - mu.pow(2)),
             axis=1,
         ).mean()
 
@@ -517,4 +517,3 @@ class LightningVAE(L.LightningModule):
             "z": output["z"].flatten(start_dim=1),
             "catalog": batch["catalog"],
         }
-

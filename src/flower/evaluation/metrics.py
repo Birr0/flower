@@ -1,7 +1,8 @@
-import numpy as np 
+import numpy as np
+from sklearn.metrics import accuracy_score, f1_score, r2_score
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import f1_score, accuracy_score, r2_score
 from sklearn.utils import resample
+
 
 def bootstrap_summary(scores):
     """
@@ -12,15 +13,9 @@ def bootstrap_summary(scores):
     mean_s = np.mean(scores)
     median_s = np.median(scores)
 
-    ci_95 = (
-        np.percentile(scores, 2.5),
-        np.percentile(scores, 97.5)
-    )
+    ci_95 = (np.percentile(scores, 2.5), np.percentile(scores, 97.5))
 
-    ci_68 = (
-        np.percentile(scores, 16),
-        np.percentile(scores, 84)
-    )
+    ci_68 = (np.percentile(scores, 16), np.percentile(scores, 84))
 
     err_95 = (ci_95[1] - ci_95[0]) / 2
 
@@ -30,8 +25,9 @@ def bootstrap_summary(scores):
         "ci_95": ci_95,
         "ci_68": ci_68,
         "err_95": err_95,
-        "scores": scores
+        "scores": scores,
     }
+
 
 def print_bootstrap_stats(name, stats):
     """
@@ -45,13 +41,7 @@ def print_bootstrap_stats(name, stats):
 
 
 def evaluate_embedding_classifier(
-    X_train,
-    y_train,
-    X_test,
-    y_test,
-    model,
-    n_iterations=1000,
-    random_state=42
+    X_train, y_train, X_test, y_test, model, n_iterations=1000, random_state=42
 ):
     """
     Trains a classifier on training data, evaluates it on test data,
@@ -63,9 +53,7 @@ def evaluate_embedding_classifier(
     if X_test.ndim == 1:
         X_test = X_test.reshape(-1, 1)
 
-    pipeline = Pipeline([
-        ("mlp", model)
-    ])
+    pipeline = Pipeline([("mlp", model)])
 
     pipeline.fit(X_train, y_train)
 
@@ -81,29 +69,14 @@ def evaluate_embedding_classifier(
     rng = np.random.RandomState(random_state)
 
     for _ in range(n_iterations):
-        resample_idx = resample(
-            indices,
-            replace=True,
-            random_state=rng
-        )
+        resample_idx = resample(indices, replace=True, random_state=rng)
 
         y_true_boot = y_test[resample_idx]
         y_pred_boot = y_pred[resample_idx]
 
-        boot_f1.append(
-            f1_score(
-                y_true_boot,
-                y_pred_boot,
-                average="weighted"
-            )
-        )
+        boot_f1.append(f1_score(y_true_boot, y_pred_boot, average="weighted"))
 
-        boot_acc.append(
-            accuracy_score(
-                y_true_boot,
-                y_pred_boot
-            )
-        )
+        boot_acc.append(accuracy_score(y_true_boot, y_pred_boot))
 
     boot_f1_stats = bootstrap_summary(boot_f1)
     boot_acc_stats = bootstrap_summary(boot_acc)
@@ -122,17 +95,12 @@ def evaluate_embedding_classifier(
         "test_accuracy": acc,
         "bootstrap_f1": boot_f1_stats,
         "bootstrap_accuracy": boot_acc_stats,
-        "pipeline": pipeline
+        "pipeline": pipeline,
     }
 
+
 def evaluate_embedding_regressor(
-    X_train,
-    y_train,
-    X_test,
-    y_test,
-    model,
-    n_iterations=1000,
-    random_state=42
+    X_train, y_train, X_test, y_test, model, n_iterations=1000, random_state=42
 ):
     """
     Trains a regressor on training data, evaluates it on test data,
@@ -145,9 +113,7 @@ def evaluate_embedding_regressor(
     if X_test.ndim == 1:
         X_test = X_test.reshape(-1, 1)
 
-    pipeline = Pipeline([
-        ("mlp", model)
-    ])
+    pipeline = Pipeline([("mlp", model)])
 
     # Train
     pipeline.fit(X_train, y_train)
@@ -163,16 +129,9 @@ def evaluate_embedding_regressor(
     rng = np.random.RandomState(random_state)
 
     for _ in range(n_iterations):
-        resample_idx = resample(
-            indices,
-            replace=True,
-            random_state=rng
-        )
+        resample_idx = resample(indices, replace=True, random_state=rng)
 
-        boot_score = r2_score(
-            y_test[resample_idx],
-            y_pred[resample_idx]
-        )
+        boot_score = r2_score(y_test[resample_idx], y_pred[resample_idx])
 
         boot_r2.append(boot_score)
 
@@ -184,11 +143,8 @@ def evaluate_embedding_regressor(
     print_bootstrap_stats("Bootstrap R2", boot_stats)
     print("-" * 40)
 
-    return {
-        "test_r2": r2,
-        "bootstrap": boot_stats,
-        "pipeline": pipeline
-    }
+    return {"test_r2": r2, "bootstrap": boot_stats, "pipeline": pipeline}
+
 
 def prepare_data(ds, embed_type, factor):
     # 1. Prepare Training and Testing Data

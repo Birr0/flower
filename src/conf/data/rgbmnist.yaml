@@ -77,7 +77,7 @@ loader:
       _target_: flower.data.modules.FlowerDataset
       dataset: ${....train_dataset}
       return_catalog: true # this would be better being false.
-    val: null 
+    val: null
     test:
       _target_: flower.data.modules.FlowerDataset
       dataset: ${....test_dataset}

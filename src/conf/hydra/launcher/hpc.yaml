@@ -8,7 +8,7 @@ tasks_per_node: 2
 mem_gb: null
 nodes: 1
 name: ${hydra.job.name}
-partition: short 
+partition: short
 #time: 24:00:00
 gres: gpu:1
 #constraint: 'gpu_sku:A100'

@@ -66,6 +66,12 @@ addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
 xfail_strict = true
 filterwarnings = [
   "error",
+  "ignore:invalid escape sequence:SyntaxWarning",
+  "ignore:Importing from:FutureWarning",
+  "ignore:GPU available but not used:lightning.fabric.utilities.warnings.PossibleUserWarning",
+  "ignore:Please use `sample` from:DeprecationWarning",
+  "ignore:'unicode' escape:SyntaxWarning",
+  "ignore::lightning.fabric.utilities.warnings.PossibleUserWarning",
 ]
 log_cli_level = "INFO"
 testpaths = [

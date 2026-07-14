@@ -33,7 +33,7 @@ embed_opt:
   - "cond"
   - "uncond"
 
-batch_limit: null 
+batch_limit: null
 
 hydra:
   sweeper:

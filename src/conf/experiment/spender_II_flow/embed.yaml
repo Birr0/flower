@@ -5,7 +5,7 @@ defaults:
   - /logger/wandb
   - /paths/default
   - /hydra/default
-  - model 
+  - model
   - sweeps
   - train
   - meta

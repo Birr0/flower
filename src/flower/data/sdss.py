@@ -3,9 +3,8 @@ import os
 import torch
 from datasets import DatasetDict, load_dataset, load_from_disk
 from dotenv import load_dotenv
-from torch.utils.data import Dataset
 from spender.instrument import get_skyline_mask
-from spender.util import interp1d
+from torch.utils.data import Dataset
 
 load_dotenv()
 RAW_DATA_DIR = os.getenv("DATA_ROOT") + "/sdss/"
@@ -15,47 +14,45 @@ LOADING_SCRIPT = "./sdss_II_resources/sdss_mmu.py"
 
 class SDSS(Dataset):
     def __init__(
-        self, 
-        split="train", 
-        x_ds=None, 
-        y_catalog=None, 
-        return_id=False, 
+        self,
+        split="train",
+        x_ds=None,
+        y_catalog=None,
+        return_id=False,
         return_pos=False,
-        return_mask_ratio=False
+        return_mask_ratio=False,
     ):
-        if not self.data_exists(): # this needs replaced.
+        if not self.data_exists():  # this needs replaced.
             if not self.raw_data_exists():
                 msg = f"""
-                Data not found in {RAW_DATA_DIR}. Download this using instructions from \
-                https://github.com/MultimodalUniverse/MultimodalUniverse/tree/main/scripts/sdss
+                Data not found in {RAW_DATA_DIR}.
                 """
                 raise ValueError(msg)
-            else:
-                dataset = load_dataset(
-                    LOADING_SCRIPT,
-                    data_dir=RAW_DATA_DIR,
-                    trust_remote_code=True,
-                    cache_dir=RAW_DATA_DIR,
-                )
+            dataset = load_dataset(
+                LOADING_SCRIPT,
+                data_dir=RAW_DATA_DIR,
+                trust_remote_code=True,
+                cache_dir=RAW_DATA_DIR,
+            )
 
-                dataset_traintest = dataset["train"].train_test_split(
-                    test_size=0.2, seed=42
-                )  # Split the data to 0.8:02
+            dataset_traintest = dataset["train"].train_test_split(
+                test_size=0.2, seed=42
+            )  # Split the data to 0.8:02
 
-                dataset_valtest = dataset_traintest["test"].train_test_split(
-                    test_size=0.1, seed=42
-                )  # Split the first split in half from validation and test.
+            dataset_valtest = dataset_traintest["test"].train_test_split(
+                test_size=0.1, seed=42
+            )  # Split the first split in half from validation and test.
 
-                dataset = DatasetDict(
-                    {
-                        "train": dataset_traintest["train"],
-                        "val": dataset_valtest["train"],
-                        "test": dataset_valtest["test"],
-                    }
-                )
-                # Need to merge the catalog with the dataset.
-                os.mkdir(DATA_DIR)
-                dataset.save_to_disk(DATA_DIR)
+            dataset = DatasetDict(
+                {
+                    "train": dataset_traintest["train"],
+                    "val": dataset_valtest["train"],
+                    "test": dataset_valtest["test"],
+                }
+            )
+            # Need to merge the catalog with the dataset.
+            os.mkdir(DATA_DIR)
+            dataset.save_to_disk(DATA_DIR)
 
         if split not in ["train", "test", "val"]:
             msg = f"Invalid split: {split}. \
@@ -67,11 +64,11 @@ class SDSS(Dataset):
 
         self.dataset = load_from_disk(DATA_DIR)[split]
         self._wave_obs = 10 ** torch.arange(3.578, 3.97, 0.0001)
-        self._skyline_mask = get_skyline_mask(self._wave_obs)      
-        self.return_id = return_id  
+        self._skyline_mask = get_skyline_mask(self._wave_obs)
+        self.return_id = return_id
         self.return_pos = return_pos
         self.return_mask_ratio = return_mask_ratio
-    
+
     @staticmethod
     def raw_data_exists():
         # simple check of the path.
@@ -100,8 +97,7 @@ class SDSS(Dataset):
         standardizes the variable wavelengths of each observation.
 
         A normalization is computed as the median flux in the relatively flat region
-        between restframe 5300 and 5850 A. The spectrum is divided by this factor, the weights
-        are muliplied with the square of this factor.
+        between restframe 5300 and 5850 A.
 
         Parameter
         ---------
@@ -132,15 +128,17 @@ class SDSS(Dataset):
         zerr: `torch.tensor`, shape (1, )
             Redshift error (only returned when argument z=None)
         """
-        
-        loglam = torch.log10(
-            torch.tensor(wavelengths)
-        )
-        flux = torch.tensor(flux, dtype=torch.float32)  #np.array(obj["spectrum"]["flux"])
 
-        flux_nan = flux.isnan()
+        loglam = torch.log10(torch.tensor(wavelengths))
+        flux = torch.tensor(
+            flux, dtype=torch.float32
+        )  # np.array(obj["spectrum"]["flux"])
 
-        ivar = torch.tensor(ivar, dtype=torch.float32) #np.array(obj["spectrum"]["ivar"])
+        flux.isnan()  # side-effect: validates flux tensor
+
+        ivar = torch.tensor(
+            ivar, dtype=torch.float32
+        )  # np.array(obj["spectrum"]["ivar"])
         ivar[mask] = 0
 
         # loglam is subset of _wave_obs, need to insert into extended tensor
@@ -169,10 +167,7 @@ class SDSS(Dataset):
         wave_rest = self._wave_obs / (1 + z)
         # flatish region that is well observed out to z ~ 0.5
         sel = (w > 0) & (wave_rest > 5300) & (wave_rest < 5850)
-        if sel.count_nonzero() == 0:
-            norm = torch.tensor(0)
-        else:
-            norm = torch.median(spec[sel])
+        norm = torch.tensor(0) if sel.count_nonzero() == 0 else torch.median(spec[sel])
         # remove spectra (from training) for which no valid norm could be found
         if not torch.isfinite(norm):
             norm = 0
@@ -204,12 +199,12 @@ class SDSS(Dataset):
         item = self.dataset[idx]
 
         # pre-process spectrum
-        spec, w, _, wave_rest, z = self.prepare_spectrum(
+        spec, _, _, _, z = self.prepare_spectrum(
             flux=item["spectrum"]["flux"],
             ivar=item["spectrum"]["ivar"],
             wavelengths=item["spectrum"]["lambda"],
             mask=item["spectrum"]["mask"],
-            z=item["Z"], # Changed from original
+            z=item["Z"],  # Changed from original
         )
 
         # Pre-process conditioning data
@@ -221,7 +216,7 @@ class SDSS(Dataset):
             ]
         )
 
-        '''
+        """
         out = [spec, y]
         if self.return_id:
             #objid = item.get("BESTOBJID")
@@ -236,17 +231,10 @@ class SDSS(Dataset):
                 float(z) if z is not None else float("nan"),
             ])
 
-        if self.return_mask_ratio:       
+        if self.return_mask_ratio:
             out.append(
                 (w == 0).sum()/len(w)
             )
-        '''
+        """
 
-        return {
-            "X": spec,
-            "y": y,
-            "catalog": {
-                "Z": torch.tensor(z)
-            }
-        }
-        
+        return {"X": spec, "y": y, "catalog": {"Z": torch.tensor(z)}}
