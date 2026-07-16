@@ -392,52 +392,7 @@ class LightningFlowMatching(L.LightningModule):
         return self.base_step(batch, "val")
 
     def test_step(self, batch, _batch_idx: int):  # noqa: PT019
-        X = batch["X"]
-        y = batch["y"]
-
-        x_1 = self.base_model.encode(X)["z"]
-        batch_size = x_1.shape[0]
-
-        mu_model, log_var = self.vf.conditional_prior(y)
-        eps = torch.randn_like(x_1)
-        x_0_cond = mu_model + torch.exp(0.5 * log_var) * eps
-
-        x_0_uncond = torch.randn_like(x_1)
-
-        x_1 = torch.cat([x_1, x_1], dim=0)
-        x_0 = torch.cat([x_0_cond, x_0_uncond], dim=0)
-
-        null_idx = torch.zeros(batch_size, dtype=torch.long, device=y.device)
-        y_null = self.vf.null_y(null_idx)
-        y_combined = torch.cat([y, y_null], dim=0)
-
-        t = torch.rand(batch_size, device=x_1.device).unsqueeze(-1)
-        t = torch.cat([t, t], dim=0)
-        x_t = t * x_1 + (1 - t) * x_0
-
-        v_t = self.vf(x_t=x_t, y=y_combined, t=t)
-        v_tgt = x_1 - x_0
-
-        cfm_loss = torch.pow(v_t - v_tgt, 2).mean()
-
-        kl_loss = (
-            0.5 * torch.sum(torch.exp(log_var) + mu_model**2 - 1 - log_var, dim=-1)
-        ).mean()
-        beta = self.get_beta()
-        loss = cfm_loss + beta * kl_loss
-
-        self.log("test_loss", loss)
-        self.log("test_cfm_loss", cfm_loss)
-        self.log("test_kl_loss", kl_loss)
-        self.log("n_layers", self.n_layers)
-        self.log("hidden_dim", self.hidden_dim)
-
-        catalog = batch["catalog"]
-
-        output = self.predict_step(X, y, embed_opt=["cond", "orig", "uncond"])
-        output["catalog"] = {k: v.detach().cpu() for k, v in catalog.items()}
-        self.test_step_outputs.append(output)
-        return output  # self.base_step(batch, "test")
+        return self.base_step(batch, "test")
 
     def predict_step(self, X, y, embed_opt=None):
         if embed_opt is None:

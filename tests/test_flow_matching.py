@@ -184,3 +184,87 @@ class TestLightningFlowMatching:
                 batch["X"], batch["y"], embed_opt=["orig", "cond", "uncond"]
             )
         assert set(out.keys()) == {"orig", "cond", "uncond"}
+
+
+class TestLightningFlowMatchingZOnlyEncoder:
+    """Smoke tests for the shared base paired with a PretrainedSpender-shaped
+    encoder (spectra's base model) — no "mu"/"logvar" keys, only "z". Tests
+    against flower.models.modules directly rather than flower.models.spectra,
+    since spectra.LightningFlowMatching is a bare `pass` subclass of the base.
+    """
+
+    @pytest.fixture
+    def base_model(self):
+        class MockSpenderBaseModel(nn.Module):
+            """Mimics PretrainedSpender.encode: only a "z" key, no mu/logvar."""
+
+            def encode(self, x):
+                return {"z": x.clone()}
+
+        return MockSpenderBaseModel()
+
+    @pytest.fixture
+    def config(self, catalog, base_model):
+        return {
+            "base_model": base_model,
+            "lr": 1e-3,
+            "batch_size": 4,
+            "code_dim": 64,
+            "hidden_dim": 64,
+            "catalog": catalog,
+            "n_steps": 20,
+            "n_layers": 3,
+            "beta_start_step": 0,
+            "beta_warmup_steps": 100,
+            "max_beta": 1.0,
+        }
+
+    @pytest.fixture
+    def flow(self, config):
+        flow = LightningFlowMatching(**config)
+        flow.wrapped_vf = WrappedModel(flow.vf)
+        flow.solver = ODESolver(velocity_model=flow.wrapped_vf)
+        return flow
+
+    def _make_batch(self, flow):
+        X = torch.randn(4, 64)
+        y = torch.randn(4, flow.cond_dim)
+        return {"X": X, "y": y}
+
+    def test_configure_optimizers(self, flow):
+        opt = flow.configure_optimizers()
+        assert opt is not None
+        assert hasattr(opt, "param_groups")
+
+    def test_training_step(self, flow):
+        batch = self._make_batch(flow)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            loss = flow.training_step(batch, 0)
+        assert isinstance(loss, torch.Tensor)
+        assert not torch.isnan(loss)
+
+    def test_validation_step(self, flow):
+        batch = self._make_batch(flow)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            loss = flow.validation_step(batch, 0)
+        assert isinstance(loss, torch.Tensor)
+        assert not torch.isnan(loss)
+
+    def test_test_step(self, flow):
+        batch = self._make_batch(flow)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            loss = flow.test_step(batch, 0)
+        assert isinstance(loss, torch.Tensor)
+        assert not torch.isnan(loss)
+
+    def test_predict_step_multiple(self, flow):
+        flow.eval()
+        batch = self._make_batch(flow)
+        with torch.no_grad():
+            out = flow.predict_step(
+                batch["X"], batch["y"], embed_opt=["orig", "cond", "uncond"]
+            )
+        assert set(out.keys()) == {"orig", "cond", "uncond"}
