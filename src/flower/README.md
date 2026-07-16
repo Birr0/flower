@@ -50,23 +50,22 @@ sweeps:
 The <b>model.yaml</b> contains a number of key entries:
 
 ```yaml
+code_dim: 64
 lightning_loader:
-  _target_: flower.training.lightning_loaders.LightningFlow
-  vae:
+  _target_: flower.models.rgbmnist.LightningFlowMatching
+  base_model:
     _target_: flower.models.rgbmnist.VAE
-    hidden_dim: 64
-  flow:
-    _target_: flower.models.rgbmnist.Flow
-    features: 64
-    context: 12
-    hidden_features: [64,64]
-    transforms: 2
-  lr: 0.0005
-  size: 64
+    hidden_dim: ${code_dim}
+  lr: 0.0001
+  code_dim: ${code_dim}
+  hidden_dim: 256
+  catalog: ${data.y_catalog}
   batch_size: ${data.loader.batch_size}
-  beta_init: 1.0
-  beta_floor: 1.0
-  vae_ckpt_path: ${paths.vae_ckpt_dir}
+  base_model_ckpt_path: ${meta.vae_ckpt_path}
+  beta_start_step: 0
+  beta_warmup_steps: 10000
+  max_beta: 1.0
+  n_steps: 20
 
 model_checkpoint: # this can be more general. Import from checkpoints and change monitor.
   _target_: lightning.pytorch.callbacks.ModelCheckpoint
@@ -76,6 +75,13 @@ model_checkpoint: # this can be more general. Import from checkpoints and change
   monitor: val_loss
   mode: min
 
+early_stopping:
+  _target_: lightning.pytorch.callbacks.EarlyStopping
+  monitor: val_loss
+  patience: 100
+  min_delta: 0.00001
+  mode: min
+
 trainer:
   logger:
     - ${logger.wandb}
@@ -83,6 +89,7 @@ trainer:
 
   callbacks:
     - ${...model_checkpoint}
+    - ${...early_stopping}
 
 trainer_ckpt_path: null # resume training from this checkpoint if avaialble
 ```

@@ -5,62 +5,14 @@ import torch.nn as nn
 from flow_matching.path import AffineProbPath
 from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
-from huggingface_hub import PyTorchModelHubMixin
 from timm.layers import trunc_normal_
-from torch import Tensor
 
 from flower.models.modules import (
-    AdaLN,
     BaseModel,
-    ConditionalPrior,
-    ConditionEmbedder,
-    TimestepEmbedder,
+    VelocityField,
     WrappedModel,
     get_conditional_len,
 )
-
-
-class VelocityField(nn.Module, PyTorchModelHubMixin):
-    def __init__(self, code_dim, hidden_dim, conditional_dim, n_hidden=3):
-        super().__init__()
-        self.hidden_dim = hidden_dim
-        self.time_dim = 1
-
-        self.t_embedder = TimestepEmbedder(hidden_dim)
-        self.input_proj = nn.Linear(code_dim, hidden_dim)
-
-        self.act = nn.SiLU()
-        self.ada_lns = nn.ModuleList(
-            [AdaLN(hidden_dim, hidden_dim) for _ in range(n_hidden)]
-        )
-        self.linears = nn.ModuleList(
-            [nn.Linear(hidden_dim, hidden_dim) for _ in range(n_hidden)]
-        )
-        self.out_proj = nn.Linear(hidden_dim, code_dim)
-
-        self.cond_embed = ConditionEmbedder(conditional_dim, hidden_dim)
-        self.null_y = nn.Embedding(
-            num_embeddings=1,
-            embedding_dim=conditional_dim,
-        )
-        # parameter for y embeddings
-        self.conditional_prior = ConditionalPrior(
-            cond_dim=conditional_dim, hidden_dim=hidden_dim, code_dim=code_dim
-        )
-
-    def forward(self, x_t: Tensor, t: Tensor, y: Tensor):
-        t_embed = self.t_embedder(t).flatten(start_dim=1)
-        y_embed = self.cond_embed(y)
-
-        x = self.input_proj(x_t)
-        c = t_embed + y_embed
-
-        for adaln, lin in zip(self.ada_lns, self.linears, strict=False):
-            identity = x
-            modulated, gate = adaln(x, c)  # replace with c here.
-            x = self.act(lin(modulated))
-            x = identity + gate * x
-        return self.out_proj(x)
 
 
 class LightningFlowMatching(L.LightningModule):

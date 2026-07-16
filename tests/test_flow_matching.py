@@ -1,4 +1,10 @@
-"""Tests for the Flow model — LightningFlowMatching and VelocityField."""
+"""Tests for the shared Flow model — LightningFlowMatching and VelocityField.
+
+VelocityField and LightningFlowMatching now live in flower.models.modules and
+are shared by every dataset (dsprites, rgbmnist, ...) via subclassing. These
+tests exercise that shared implementation directly instead of duplicating the
+same checks per dataset subclass.
+"""
 
 from __future__ import annotations
 
@@ -9,19 +15,7 @@ import torch
 import torch.nn as nn
 from flow_matching.solver import ODESolver
 
-from flower.models.dsprites import (
-    LightningFlowMatching as LightningFlowMatchingDS,
-)
-from flower.models.dsprites import (
-    VelocityField as VelocityFieldDS,
-)
-from flower.models.modules import WrappedModel
-from flower.models.rgbmnist import (
-    LightningFlowMatching as LightningFlowMatchingRGB,
-)
-from flower.models.rgbmnist import (
-    VelocityField as VelocityFieldRGB,
-)
+from flower.models.modules import LightningFlowMatching, VelocityField, WrappedModel
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -57,13 +51,11 @@ def base_model():
 
 
 class TestVelocityField:
-    """Tests for the VelocityField neural network."""
+    """Tests for the shared VelocityField neural network."""
 
     @pytest.fixture
     def vf(self):
-        return VelocityFieldDS(
-            code_dim=64, hidden_dim=64, conditional_dim=12, n_layers=2
-        )
+        return VelocityField(code_dim=64, hidden_dim=64, conditional_dim=12, n_layers=2)
 
     def test_forward_shapes(self, vf):
         x_t = torch.randn(4, 64)
@@ -91,30 +83,13 @@ class TestVelocityField:
             assert out.shape == (batch, 64)
 
 
-class TestVelocityFieldRGB:
-    """Tests for the RGBMNIST VelocityField."""
-
-    @pytest.fixture
-    def vf(self):
-        return VelocityFieldRGB(
-            code_dim=64, hidden_dim=64, conditional_dim=12, n_hidden=2
-        )
-
-    def test_forward_shapes(self, vf):
-        x_t = torch.randn(4, 64)
-        t = torch.tensor([0.5, 0.3, 0.7, 0.1])
-        y = torch.randn(4, 12)
-        out = vf(x_t=x_t, t=t, y=y)
-        assert out.shape == (4, 64)
-
-
 # ---------------------------------------------------------------------------
 # LightningFlowMatching — integration / smoke tests
 # ---------------------------------------------------------------------------
 
 
 class TestLightningFlowMatching:
-    """Smoke test for the dsprites LightningFlowMatching module."""
+    """Smoke tests for the shared LightningFlowMatching module."""
 
     @pytest.fixture
     def config(self, catalog, base_model):
@@ -134,7 +109,7 @@ class TestLightningFlowMatching:
 
     @pytest.fixture
     def flow(self, config):
-        flow = LightningFlowMatchingDS(**config)
+        flow = LightningFlowMatching(**config)
         # predict_step requires solver, which is normally created with ckpt_path
         flow.wrapped_vf = WrappedModel(flow.vf)
         flow.solver = ODESolver(velocity_model=flow.wrapped_vf)
@@ -205,64 +180,3 @@ class TestLightningFlowMatching:
                 batch["X"], batch["y"], embed_opt=["orig", "cond", "uncond"]
             )
         assert set(out.keys()) == {"orig", "cond", "uncond"}
-
-
-class TestLightningFlowMatchingRGB:
-    """Smoke test for the RGBMNIST LightningFlowMatching module."""
-
-    @pytest.fixture
-    def base_model(self):
-        class MockBaseModel(nn.Module):
-            def encode(self, x):
-                b = x.shape[0]
-                return x.clone(), torch.zeros(b, 64), torch.zeros(b, 64)
-
-        return MockBaseModel()
-
-    @pytest.fixture
-    def config(self, base_model):
-        return {
-            "base_model": base_model,
-            "lr": 1e-3,
-            "batch_size": 4,
-            "code_dim": 64,
-            "hidden_dim": 64,
-            "catalog": {
-                "variables": {
-                    "r": {"size": 1, "continuous": 1},
-                    "g": {"size": 1, "continuous": 1},
-                    "b": {"size": 1, "continuous": 1},
-                    "digit": {"size": 10, "continuous": 0},
-                },
-                "drop_variables": ["b"],
-            },
-            "n_steps": 20,
-            "beta_start_step": 0,
-            "beta_warmup_steps": 100,
-            "max_beta": 1.0,
-        }
-
-    @pytest.fixture
-    def flow(self, config):
-        flow = LightningFlowMatchingRGB(**config)
-        flow.wrapped_vf = WrappedModel(flow.vf)
-        flow.solver = ODESolver(velocity_model=flow.wrapped_vf)
-        return flow
-
-    def _make_batch(self, flow):
-        X = torch.randn(4, 64)
-        cond_dim = flow.cond_dim
-        y = torch.randn(4, cond_dim)
-        return {"X": X, "y": y}
-
-    def test_training_step(self, flow):
-        batch = self._make_batch(flow)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            loss = flow.training_step(batch, 0)
-        assert isinstance(loss, torch.Tensor)
-        assert not torch.isnan(loss)
-
-    def test_configure_optimizers(self, flow):
-        opt = flow.configure_optimizers()
-        assert opt is not None
