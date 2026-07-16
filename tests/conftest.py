@@ -163,27 +163,6 @@ def dummy_batch():
 
 
 @pytest.fixture
-def vae_config():
-    """Config dict for creating a VAE via hydra.utils.instantiate."""
-    return {
-        "_target_": "flower.models.rgbmnist.VAE",
-        "hidden_dim": 64,
-    }
-
-
-@pytest.fixture
-def dummy_lightning_vae_config(vae_config):
-    """LightningVAE config."""
-    return {
-        "_target_": "flower.training.lightning_loaders.LightningVAE",
-        "vae": vae_config,
-        "lr": 1e-3,
-        "batch_size": 4,
-        "beta": 1.0,
-    }
-
-
-@pytest.fixture
 def tmp_checkpoint_dir(tmp_path: Path) -> Path:
     """Create a temp directory with a fake .ckpt file for get_ckpt_files tests."""
     ckpt_dir = tmp_path / "checkpoints"
