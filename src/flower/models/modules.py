@@ -15,7 +15,9 @@ from torch import Tensor
 class BaseModel(Protocol):
     latent_dim: int
 
-    def encode(self, X: torch.Tensor) -> torch.Tensor: ...
+    def encode(self, X: torch.Tensor) -> dict:
+        """Return a dict with at least a "z" key; "mu"/"logvar" are optional."""
+        ...
 
 
 def get_conditional_len(y_catalog: dict) -> int:
@@ -340,7 +342,7 @@ class LightningFlowMatching(L.LightningModule):
         X = batch["X"]
         y = batch["y"]
 
-        x_1, _, _ = self.base_model.encode(X)
+        x_1 = self.base_model.encode(X)["z"]
         batch_size = x_1.shape[0]
 
         mu_model, log_var = self.vf.conditional_prior(y)
@@ -393,7 +395,7 @@ class LightningFlowMatching(L.LightningModule):
         X = batch["X"]
         y = batch["y"]
 
-        x_1, _, _ = self.base_model.encode(X)
+        x_1 = self.base_model.encode(X)["z"]
         batch_size = x_1.shape[0]
 
         mu_model, log_var = self.vf.conditional_prior(y)
@@ -443,7 +445,7 @@ class LightningFlowMatching(L.LightningModule):
         self.eval()
         with torch.no_grad():
             output = {}
-            code, _, _ = self.base_model.encode(X)
+            code = self.base_model.encode(X)["z"]
             if "orig" in embed_opt:
                 output["orig"] = code
 

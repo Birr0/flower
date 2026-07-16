@@ -40,7 +40,11 @@ def base_model():
     class MockBaseModel(nn.Module):
         def encode(self, x):
             b = x.shape[0]
-            return x.clone(), torch.zeros(b, 64), torch.zeros(b, 64)
+            return {
+                "z": x.clone(),
+                "mu": torch.zeros(b, 64),
+                "logvar": torch.zeros(b, 64),
+            }
 
     return MockBaseModel()
 

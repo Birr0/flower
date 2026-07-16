@@ -199,7 +199,7 @@ class VAE(nn.Module):
         log_var = torch.clamp(log_var, -30.0, 20.0)
 
         z = self.reparametrize(mu, log_var).view(mu.size(0), -1)
-        return z, mu, log_var
+        return {"z": z, "mu": mu, "logvar": log_var}
 
     def forward(self, x):
         for block in self.encoder.layers:

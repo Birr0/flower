@@ -24,7 +24,7 @@ class LightningFlowMatching(LightningFlowMatchingBase):
         X = batch["X"]
         y = batch["y"]
 
-        x_1, _, _ = self.base_model.encode(X)
+        x_1 = self.base_model.encode(X)["z"]
         batch_size = x_1.shape[0]
 
         mu_model, log_var = self.vf.conditional_prior(y)
@@ -310,7 +310,7 @@ class BetaVAE(nn.Module):
         mu, logvar = self.fc_mu(h), self.fc_logvar(h)
         # Sample
         z = self.reparameterize(mu, logvar)
-        return z, mu, logvar
+        return {"z": z, "mu": mu, "logvar": logvar}
 
     def forward(self, x):
         # Encode

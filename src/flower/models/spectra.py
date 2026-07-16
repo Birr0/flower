@@ -97,7 +97,7 @@ class LightningFlowMatching(L.LightningModule):
         X = batch["X"]
         y = batch["y"]
 
-        x_1 = self.base_model.encode(X)
+        x_1 = self.base_model.encode(X)["z"]
         batch_size = x_1.shape[0]
 
         mu_model, log_var = self.vf.conditional_prior(y)
@@ -149,7 +149,7 @@ class LightningFlowMatching(L.LightningModule):
         self.eval()
         with torch.no_grad():
             output = {}
-            code = self.base_model.encode(X)
+            code = self.base_model.encode(X)["z"]
             if "orig" in embed_opt:
                 output["orig"] = code
 
@@ -187,7 +187,7 @@ class PretrainedSpender(nn.Module):
 
     @torch.no_grad()
     def encode(self, X):
-        return self.model.encoder(X)
+        return {"z": self.model.encoder(X)}
 
     @torch.no_grad()
     def decoder(self, Z):
@@ -212,7 +212,7 @@ if __name__ == "__main__":
             self.code_dim = code_dim
 
         def encode(self, x):
-            return torch.randn(x.shape[0], self.code_dim)
+            return {"z": torch.randn(x.shape[0], self.code_dim)}
 
     base_model = MockBaseModel(CODE_DIM)
 
