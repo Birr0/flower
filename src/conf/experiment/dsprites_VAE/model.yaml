@@ -1,9 +1,9 @@
 model:
-  _target_: wwdc.models.dsprites.BetaVAE
+  _target_: flower.models.dsprites.BetaVAE
   latent_dim: 10
 
 lightning_loader: # keep as default (populate the above with the correct config)
-  _target_: wwdc.models.dsprites.LightningBetaVAE
+  _target_: flower.models.dsprites.LightningBetaVAE
   vae: ${model}
   lr: 0.0005
   beta: 0.00001

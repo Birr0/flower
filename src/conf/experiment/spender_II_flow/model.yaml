@@ -1,8 +1,8 @@
 code_dim: 6
 lightning_loader:
-  _target_: wwdc.models.spectra.LightningFlowMatching
+  _target_: flower.models.spectra.LightningFlowMatching
   base_model:
-    _target_: wwdc.models.spectra.PretrainedSpender
+    _target_: flower.models.spectra.PretrainedSpender
     model: "sdss_II"
     latent_dim: ${code_dim}
   lr: 0.0001
