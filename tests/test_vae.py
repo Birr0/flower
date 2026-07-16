@@ -20,10 +20,10 @@ class TestBetaVAE:
 
     def test_encode_returns_shapes(self, model):
         x = torch.randn(4, 1, 64, 64)
-        z, mu, logvar = model.encode(x)
-        assert z.shape == (4, 10)
-        assert mu.shape == (4, 10)
-        assert logvar.shape == (4, 10)
+        out = model.encode(x)
+        assert out["z"].shape == (4, 10)
+        assert out["mu"].shape == (4, 10)
+        assert out["logvar"].shape == (4, 10)
 
     def test_forward_returns_dict(self, model):
         x = torch.randn(4, 1, 64, 64)

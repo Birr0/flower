@@ -30,7 +30,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 
 
 class MockEncoder(nn.Module):
-    """Minimal encoder mock with encode() -> (latent, mu, logvar)."""
+    """Minimal encoder mock with encode() -> {"z", "mu", "logvar"}."""
 
     def __init__(self, latent_dim=64):
         super().__init__()
@@ -40,12 +40,11 @@ class MockEncoder(nn.Module):
     def encode(self, x):
         # x shape: (batch, 1, 64, 64) or (batch, 3, 28, 28)
         b = x.shape[0]
-        # Return (x_1, mu, logvar)
         x_flat = x.view(b, -1)
         mu = self.proj(x_flat)
         logvar = torch.zeros_like(mu)
         x_1 = mu + torch.randn_like(mu) * 0.1  # slight perturbation
-        return x_1, mu, logvar
+        return {"z": x_1, "mu": mu, "logvar": logvar}
 
 
 class MockRGBEncoder(nn.Module):
@@ -62,7 +61,7 @@ class MockRGBEncoder(nn.Module):
         mu = self.proj(x_flat)
         logvar = torch.zeros_like(mu)
         x_1 = mu + torch.randn_like(mu) * 0.1
-        return x_1, mu, logvar
+        return {"z": x_1, "mu": mu, "logvar": logvar}
 
 
 # ===========================================================================
