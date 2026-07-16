@@ -23,7 +23,7 @@ experiment configuration, so every experiment is reproducible from a config file
 - `analysis/`, `data/`, `docs/` — scratch space for analysis notebooks, local datasets, and
   additional documentation.
 
-## Getting started 
+## Getting started
 
 ### Installation
 Packages are installable using uv.
@@ -37,7 +37,7 @@ source .venv/bin/activate
 Fill out the .env with personal data directories and logging information. If running models, ensure that the wandb information is filled out for model logging.
 
 ## Experiments
-We use hydra configs to coordinate experiments. The parameters for each experiment can be found in the src/conf/experiments folder. 
+We use hydra configs to coordinate experiments. The parameters for each experiment can be found in the src/conf/experiments folder.
 
 Instructions on reproducing the experiments can be found in the examples folder in this directory.
 
