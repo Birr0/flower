@@ -607,6 +607,61 @@ class TestMiniE2EDspritesFlow:
             )
         assert "orig" in out
 
+    def test_test_step_with_conditional_prior(self, model, dummy_batch_dsprites):
+        """dsprites.LightningFlowMatching.test_step duplicates base_step's
+        loss computation (see issue #12) — exercise it directly with the
+        default use_conditional_prior=True to confirm it still runs and
+        produces the MLP-probe outputs the on_test_epoch_end hook expects."""
+        model.on_test_start()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            output = model.test_step(dummy_batch_dsprites, 0)
+        assert set(output.keys()) >= {"cond", "uncond", "orig", "catalog"}
+        model.test_step_outputs.clear()
+
+    def test_test_step_without_conditional_prior(self, load_config):
+        """Same as above but with use_conditional_prior=False — confirms the
+        flag branch added to base_step (#3) was mirrored correctly into this
+        duplicated test_step, per the plan tracked in issue #12."""
+        cfg = load_config("dsprites_Flow")
+        catalog = cfg["data"]["y_catalog"]
+        encoder = MockEncoder(latent_dim=64)
+        model = LightningFlowMatching(
+            base_model=encoder,
+            lr=cfg["lightning_loader"]["lr"],
+            batch_size=4,
+            code_dim=64,
+            hidden_dim=64,
+            catalog=catalog,
+            n_layers=4,
+            max_beta=0.0,
+            use_conditional_prior=False,
+        )
+        assert model.vf.conditional_prior is None
+
+        batch_size = 4
+        batch = {
+            "X": torch.randn(batch_size, 1, 64, 64),
+            "y": torch.randn(batch_size, 7),
+            "catalog": {
+                "label_shape": torch.zeros(batch_size, 1),
+                "value_x_position": torch.zeros(batch_size, 1),
+                "value_y_position": torch.zeros(batch_size, 1),
+                "value_orientation_sin": torch.zeros(batch_size, 1),
+                "value_orientation_cos": torch.zeros(batch_size, 1),
+                "value_scale": torch.zeros(batch_size, 1),
+                "label": torch.zeros(batch_size, 1),
+                "label_disparity": torch.zeros(batch_size, 1),
+            },
+        }
+
+        model.on_test_start()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            output = model.test_step(batch, 0)
+        assert set(output.keys()) >= {"cond", "uncond", "orig", "catalog"}
+        model.test_step_outputs.clear()
+
     @pytest.mark.skip(
         reason="predict_step with cond/uncond requires solver which needs a checkpoint"
     )
