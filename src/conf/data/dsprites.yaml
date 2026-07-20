@@ -43,19 +43,19 @@ train_dataset:
   y_catalog: ${..y_catalog}
 
 val_dataset:
-  _target_: flower..data.dsprites.dSprites
+  _target_: flower.data.dsprites.dSprites
   split: "val"
   x_ds: ${..x_ds}
   y_catalog: ${..y_catalog}
 
 test_dataset:
-  _target_: flower..data.dsprites.dSprites
+  _target_: flower.data.dsprites.dSprites
   split: "test"
   x_ds: ${..x_ds}
   y_catalog: ${..y_catalog}
 
 loader:
-  _target_: flower..data.modules.FlowerDataLoader
+  _target_: flower.data.modules.FlowerDataLoader
   datasets:
     train:
       _target_: flower.data.modules.FlowerDataset
