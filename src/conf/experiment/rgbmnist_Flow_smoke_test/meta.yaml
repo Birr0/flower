@@ -1,0 +1,18 @@
+meta:
+  authors:
+  - anon
+  data_id: 1
+  data_name: rgbmnist
+  description: Smoke test for rgbmnist_Flow -- a few batches over a few epochs
+    only, to verify the pipeline runs end-to-end.
+  experiment_id: 3
+  experiment_name: rgbmnist_Flow_smoke_test
+  experiment_path: ${paths.data_dir}/${meta.data_name}/${meta.experiment_name}/
+  version: 1.0
+  # null: the saved checkpoint's VAE decoder architecture no longer matches
+  # flower.models.rgbmnist.VAE (fails to load state_dict); using fresh random
+  # weights is fine here since this is just a smoke test of the flow-matching
+  # pipeline, not a check on embedding quality.
+  vae_ckpt_path: null
+  data_path: ${paths.data_dir}/MNIST
+  scratch_data_path: ${paths.scratch_data_dir}/rgbmnist/${hydra:job.id}
