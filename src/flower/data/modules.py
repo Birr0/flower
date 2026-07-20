@@ -63,7 +63,7 @@ class FlowerDataLoader(L.LightningDataModule):
         self.batch_size = batch_size
         self.val_split = val_split
         self.random_state = random_state
-        if not num_workers:
+        if num_workers is None:
             self.num_workers = 1  # os.cpu_count() - 1
         else:
             self.num_workers = num_workers
