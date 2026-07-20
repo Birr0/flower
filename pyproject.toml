@@ -62,7 +62,10 @@ dependencies = []
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config", "-m", "not smoke"]
+markers = [
+  "smoke: slow end-to-end training runs against real data/checkpoints (no GPU required, but needs DATA_ROOT and local_data populated); excluded by default, run explicitly with `pytest -m smoke`",
+]
 xfail_strict = true
 filterwarnings = [
   "error",

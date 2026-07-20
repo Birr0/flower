@@ -1,0 +1,12 @@
+meta:
+  authors:
+  - BR
+  data_id: 1
+  data_name: dsprites
+  description: Smoke test for dsprites_Flow -- a few batches over a few epochs
+    only, to verify the pipeline runs end-to-end.
+  experiment_id: 5
+  experiment_name: dsprites_Flow_smoke_test
+  experiment_path: ${paths.data_dir}/${meta.data_name}/${meta.experiment_name}/
+  version: 1.0
+  vae_ckpt_path: ${oc.env:DATA_ROOT}/${meta.data_name}/dsprites_VAE/ckpts/7586427.ckpt
