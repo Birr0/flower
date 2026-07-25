@@ -1,0 +1,36 @@
+{
+  "args": {
+    "betas": [
+      0.02,
+      0.03,
+      0.07,
+      0.15,
+      0.2,
+      0.3
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "iterations": 20001,
+    "outdir": "beta_sweep_transition_results"
+  },
+  "lr": 0.001,
+  "batch_size": 1024,
+  "warmup_iters": 10000,
+  "n_eval": 20000,
+  "n_probe_train": 15000,
+  "chance_accuracy": 0.25,
+  "probes": {
+    "classifier": [
+      "LogisticRegression",
+      "MLP(64,32)"
+    ],
+    "regressor": [
+      "LinearRegression",
+      "MLP(64,32)"
+    ]
+  },
+  "device": "cuda"
+}
