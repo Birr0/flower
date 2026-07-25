@@ -1,6 +1,6 @@
 # To-Do
 
-* Documentation 
+* Documentation
 
 * CI tests
     * GitHub actions
