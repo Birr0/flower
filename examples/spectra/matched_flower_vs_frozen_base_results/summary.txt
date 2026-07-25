@@ -1,0 +1,16 @@
+Spectra embedding benchmark — bootstrap-mean test R²
+z: LOWER = better removal | logM*/logSFR/A_v: HIGHER = better preservation
+  flower: sdss_II/spender_I_flow_v2/spender_I_flow_v2/embeddings/7526202_0
+  frozen_base: sdss_II/spender_I_flow_v2/spender_I_flow_v2/embeddings/7655991_0
+
+Run                   factor_bound flower               frozen_base
+Split             physical_factors   cond   orig uncond        cond   orig uncond
+Attribute Layers
+A_v       1-Layer              NaN 0.5270 0.5900 0.5785      0.5272 0.5900 0.5805
+          2-Layer              NaN 0.5332 0.5948 0.5895      0.5316 0.5948 0.5897
+logM*     1-Layer              NaN 0.2643 0.8147 0.8055      0.2712 0.8147 0.8071
+          2-Layer              NaN 0.2694 0.8206 0.8133      0.2586 0.8206 0.8114
+logSFR    1-Layer              NaN 0.5893 0.6657 0.6534      0.6023 0.6657 0.6570
+          2-Layer              NaN 0.5970 0.6651 0.6663      0.6090 0.6651 0.6667
+z         1-Layer           0.7098 0.0572 0.5808 0.5881      0.0606 0.5808 0.5858
+          2-Layer           0.7212 0.0846 0.6090 0.6014      0.0866 0.6090 0.6043

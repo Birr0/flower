@@ -1,0 +1,15 @@
+Spectra embedding benchmark — bootstrap-mean test R²
+z: LOWER = better removal | logM*/logSFR/A_v: HIGHER = better preservation
+  frozen_base: sdss_II/spender_I_flow_v2/spender_I_flow_v2/embeddings/7655991_0
+
+Run               frozen_base
+Split                    cond   orig uncond
+Attribute Layers
+A_v       1-Layer      0.5243 0.5886 0.5793
+          2-Layer      0.5308 0.5918 0.5901
+logM*     1-Layer      0.2610 0.8148 0.8067
+          2-Layer      0.2642 0.8195 0.8127
+logSFR    1-Layer      0.6033 0.6676 0.6557
+          2-Layer      0.6054 0.6685 0.6637
+z         1-Layer      0.0912 0.6673 0.6760
+          2-Layer      0.1048 0.7108 0.7082
