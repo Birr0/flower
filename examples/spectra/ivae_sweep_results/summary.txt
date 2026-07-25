@@ -1,0 +1,28 @@
+ICA-baseline sweep on spender_I spectra (condition = redshift z)
+z R2: LOWER = better removal | logM*/logSFR/A_v R2: HIGHER = better preservation
+
+       source    method  k  n_dims  z_r2_linreg  z_r2_mlp  logM*_r2_mlp  logSFR_r2_mlp  A_v_r2_mlp
+          Raw      none  0      10        0.404     0.555         0.809          0.659       0.573
+      FastICA    residB  0      10       -0.000     0.607         0.728          0.666       0.567
+         iVAE    residB  0      10        0.003     0.434         0.618          0.653       0.559
+      FastICA    residA  1       9        0.273     0.502         0.708          0.499       0.513
+      FastICA    residA  2       8        0.142     0.389         0.652          0.435       0.488
+      FastICA    residA  3       7        0.057     0.219         0.484          0.275       0.348
+      FastICA    residA  4       6        0.031     0.163         0.383          0.218       0.306
+      FastICA    residA  6       4        0.009     0.096         0.287          0.166       0.258
+      FastICA    residA  7       3        0.002     0.029         0.146          0.106       0.212
+      FastICA    residA  8       2        0.000     0.009         0.140          0.094       0.211
+      FastICA    residA  9       1       -0.000     0.030         0.116          0.045       0.195
+         iVAE    residA  1       9        0.388     0.504         0.774          0.603       0.567
+         iVAE    residA  2       8        0.275     0.375         0.401          0.422       0.518
+         iVAE    residA  3       7        0.162     0.236         0.304          0.407       0.501
+         iVAE    residA  4       6        0.065     0.155         0.264          0.395       0.488
+         iVAE    residA  6       4        0.018     0.027         0.135          0.335       0.451
+         iVAE    residA  7       3        0.010    -0.001         0.104          0.332       0.451
+         iVAE    residA  8       2        0.004    -0.020         0.081          0.323       0.444
+         iVAE    residA  9       1        0.002     0.007         0.012          0.273       0.427
+ Resid-linear    direct  0      10       -0.000     0.607         0.730          0.663       0.566
+    Resid-mlp    direct  0      10        0.001     0.602         0.693          0.663       0.571
+     Resid-rf    direct  0      10       -0.000    -0.405        -0.214          0.022      -0.040
+  Flower-cond embedding  0      10        0.011     0.028         0.250          0.577       0.512
+Flower-uncond embedding  0      10        0.404     0.534         0.797          0.648       0.567

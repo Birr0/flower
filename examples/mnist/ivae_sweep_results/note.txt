@@ -1,0 +1,77 @@
+NOTE — what these residuals actually remove (independence assumption)
+====================================================================
+
+This sweep conditions on the DIGIT only (u = one-hot(digit)). The residual
+methods therefore target the digit and nothing else. Interpreting the numbers
+requires being clear about which factors of variation are affected.
+
+Only the conditioned factor is removed
+--------------------------------------
+- Residual A drops the sources ranked most dependent on the digit LABEL (via the
+  correlation ratio eta^2 with the digit).
+- Residual B subtracts the per-digit mean (empirical for FastICA; the learned
+  conditional-prior mean lambda_mu(u) for the iVAEs).
+
+Both act only on structure aligned with the digit label. Any factor of variation
+that is INDEPENDENT of the digit is left untouched in the residual.
+
+Consequence for other factors (e.g. rotation)
+----------------------------------------------
+RGB-MNIST applies a random affine rotation (~N(0, 10 deg)) that is independent of
+the digit and is NOT part of u. Therefore:
+
+  * rotation-as-augmentation  -> NOT removed. Its source has ~zero eta^2 with the
+    digit and no per-digit mean, so neither residual A nor B touches it. It stays
+    in the "seed" (this is the intended behaviour — non-conditioned variation is
+    preserved).
+
+  * rotation-as-a-known-factor -> removable, but only if you LABEL it and add it
+    to u (e.g. u = [digit, angle]). The iVAE conditional prior handles continuous
+    conditions; FastICA's per-group mean would need binning/regression. The
+    current embeddings only log r, g, b, digit — the augmentation angle was not
+    saved — so rotation removal is not tested here.
+
+  * a factor ASSOCIATED WITH / correlated with the digit -> removed only to the
+    extent of that association. Residual A would drop it (high eta^2); residual B
+    removes only its MEAN part, leaving higher-order/nonlinear digit-associated
+    structure behind (this is exactly why an MLP probe still recovers the digit
+    at 0.86-0.99 after mean subtraction, while a linear probe is fooled).
+
+Key assumption
+--------------
+The clean-disentanglement ideal — rotation sitting in its own independent source,
+untouched by digit removal — holds only if the model IDENTIFIES the factors
+(iVAE's independence-given-u assumption) AND the true factors are actually
+independent of the digit given u. On the real MNIST latent this did not hold
+strongly (the digit was not removed robustly by the mean-based residuals), so
+entangled, digit-associated variation is only partially removed.
+
+Bottom line: these results quantify removal of the DIGIT. They say nothing about
+removing rotation or other nuisances unless those factors are themselves added to
+the conditioning set u.
+
+
+EMPIRICAL ADDENDUM (FastICA + rotation, see ../ivae_sweep_results_fastica_rot/)
+------------------------------------------------------------------------------
+The reasoning above ("rotation is independent of the digit, so it should be
+retained") is INDEPENDENCE FROM THE LABEL. Measured on the real embedding, that
+is NOT the same as independence in the REPRESENTATION, and the two preservation
+targets behave oppositely under FastICA residual A (drop k digit-dependent
+sources):
+
+  * colour b  -> genuinely independent: preserved (MLP R^2 ~0.95) right up to the
+    digit-removal sweet spot (k~=21, digit MLP acc ~0.15), then a cliff at k~=23.
+
+  * rotation  -> ENTANGLED with the digit: destroyed far earlier. Rotation MLP
+    R^2 falls from 0.92 (raw) to ~0.09 by k=13 and goes NEGATIVE (fully removed)
+    by k~=15-19. There is NO k that removes the digit while keeping rotation.
+
+Interpretation: rotation was applied as a label-independent augmentation, but the
+measured orientation lives in the same "shape" latent directions that encode
+digit identity, so the digit-dependent components carry rotation too. Colour is a
+separate channel-scaling (separable); rotation is geometric (entangled).
+
+Lesson: dropping label-dependent sources removes a factor iff that factor shares
+representation directions with the label — which holds for entangled geometry
+(rotation) even when the factor is statistically independent of the label. So
+"independent of the digit label" does NOT guarantee "preserved by digit removal".

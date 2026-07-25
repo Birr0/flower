@@ -1,0 +1,38 @@
+ICA-baseline sweep on RGB-MNIST (class-only; condition = digit)
+digit acc: lower = better removal (chance 0.10) | b R2: higher = better preservation
+
+   source method  k  n_dims  digit_acc_logreg  digit_acc_mlp  b_r2_linreg  b_r2_mlp
+      Raw   none  0      64             0.947          0.979        0.959     0.990
+iVAE-fair residB  0      64             1.000          1.000        0.931     0.910
+iVAE-fair residA  1      63             0.939          0.971        0.930     0.901
+iVAE-fair residA  3      61             0.940          0.967        0.930     0.941
+iVAE-fair residA  5      59             0.939          0.965        0.930     0.671
+iVAE-fair residA  7      57             0.939          0.967        0.930     0.922
+iVAE-fair residA  9      55             0.939          0.967        0.930     0.944
+iVAE-fair residA 11      53             0.938          0.967        0.930     0.952
+iVAE-fair residA 13      51             0.938          0.968        0.930     0.935
+iVAE-fair residA 15      49             0.938          0.969        0.930     0.925
+iVAE-fair residA 17      47             0.938          0.965        0.930     0.929
+iVAE-fair residA 19      45             0.938          0.968        0.930     0.946
+iVAE-fair residA 21      43             0.937          0.968        0.929     0.942
+iVAE-fair residA 23      41             0.938          0.969        0.929     0.919
+iVAE-fair residA 25      39             0.936          0.965        0.929     0.925
+iVAE-fair residA 27      37             0.936          0.968        0.929     0.954
+iVAE-fair residA 29      35             0.936          0.966        0.928     0.949
+iVAE-fair residA 31      33             0.936          0.968        0.926     0.947
+iVAE-fair residA 33      31             0.934          0.965        0.926     0.946
+iVAE-fair residA 35      29             0.934          0.964        0.917     0.941
+iVAE-fair residA 37      27             0.934          0.963        0.917     0.930
+iVAE-fair residA 39      25             0.932          0.962        0.892     0.915
+iVAE-fair residA 41      23             0.918          0.954        0.830     0.889
+iVAE-fair residA 43      21             0.904          0.946        0.770     0.855
+iVAE-fair residA 45      19             0.879          0.931        0.698     0.803
+iVAE-fair residA 47      17             0.847          0.908        0.538     0.664
+iVAE-fair residA 49      15             0.797          0.878        0.455     0.608
+iVAE-fair residA 51      13             0.747          0.829        0.358     0.533
+iVAE-fair residA 53      11             0.639          0.729        0.321     0.440
+iVAE-fair residA 55       9             0.556          0.635        0.244     0.357
+iVAE-fair residA 57       7             0.445          0.522        0.171     0.222
+iVAE-fair residA 59       5             0.363          0.421        0.147     0.156
+iVAE-fair residA 61       3             0.261          0.280        0.020    -0.046
+iVAE-fair residA 63       1             0.160          0.161       -0.000    -0.104

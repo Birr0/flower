@@ -1,0 +1,7 @@
+Flower cond vs Raw on RGB-MNIST (class-only; condition = digit)
+digit acc: lower = better removal (chance 0.10) | b / rotation R2: higher = better preservation
+
+  embedding  digit_acc_logreg  digit_acc_mlp  b_r2_linreg  b_r2_mlp  rot_r2_linreg  rot_r2_mlp
+ Raw (orig)             0.947          0.979        0.959     0.990          0.660       0.924
+     uncond             0.803          0.923        0.896     0.970          0.530       0.791
+Flower cond             0.748          0.792        0.922     0.960          0.495       0.611
