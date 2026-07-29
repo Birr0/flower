@@ -62,13 +62,19 @@ SPENDER_MAP = {
 }
 
 
+# MLP *probe* capacity. Defaults are the original sweep's setting; the paper's
+# spectra benchmark (``embedding_benchmark.py``) probes with (64, 64)/max_iter=1000,
+# so ``ivae_sweep_matched_probe.py`` overrides this to make the two comparable.
+# Note this is the read-out probe only — the ``Resid-mlp`` *residualiser* below is a
+# baseline model, not a probe, and is deliberately left unchanged.
+PROBE_MLP = {"hidden_layer_sizes": (64, 32), "max_iter": 300}
+
+
 def _r2(x_tr, x_te, y_tr, y_te, kind):
     if kind == "linreg":
         reg = LinearRegression()
     else:
-        reg = MLPRegressor(
-            hidden_layer_sizes=(64, 32), max_iter=300, random_state=RANDOM_STATE
-        )
+        reg = MLPRegressor(random_state=RANDOM_STATE, **PROBE_MLP)
     reg.fit(x_tr, y_tr)
     return r2_score(y_te, reg.predict(x_te))
 
@@ -109,7 +115,10 @@ def _dump_params(args):
         },
         "fastica": {"n_components": "d", "max_iter": 1000, "whiten": "unit-variance"},
         "probes": {
-            "regressor_mlp": {"hidden_layer_sizes": [64, 32], "max_iter": 300},
+            "regressor_mlp": {
+                "hidden_layer_sizes": list(PROBE_MLP["hidden_layer_sizes"]),
+                "max_iter": PROBE_MLP["max_iter"],
+            },
             "regressor_linear": "LinearRegression",
         },
         "direct_residualisers": {

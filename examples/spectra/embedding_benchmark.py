@@ -33,10 +33,19 @@ Run from this directory (needs ``DATA_ROOT``):
         --run flower=$EMB/7526202_0 \
         --run frozen_base=$EMB/7655991_0 \
         --outdir flower_vs_frozen_base_results
+
+Add ``--matched --factor-bound`` for the numbers cited in the rebuttal: it puts
+the ``z`` residual and the physical-target R² on identical rows and adds the
+correlation bound (``z`` predicted from the preserved factors alone). Each run
+writes ``results.csv``, ``summary.txt`` and ``params.json`` (the full invocation)
+into ``--outdir``. See ``review/neurips/residual_floor_analysis.md`` §Provenance
+for the exact commands behind the cited tables.
 """
 
 import argparse
+import json
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -291,6 +300,25 @@ def main():
     data_root = os.getenv("DATA_ROOT")
     runs = dict(spec.split("=", 1) for spec in args.run)
     os.makedirs(args.outdir, exist_ok=True)
+
+    # Record how these numbers were produced, next to the numbers themselves —
+    # the results are cited in the rebuttal and must stay reproducible.
+    with open(f"{args.outdir}/params.json", "w") as fh:
+        json.dump(
+            {
+                "command": " ".join(sys.argv),
+                "args": vars(args),
+                "runs": runs,
+                "n_boot": N_BOOT,
+                "random_state": RANDOM_STATE,
+                "architectures": {k: list(v) for k, v in ARCHITECTURES.items()},
+                "targets": TARGET_ATTRIBUTES,
+                "physical_targets": PHYSICAL_TARGETS,
+                "max_aligned_train": MAX_ALIGNED_TRAIN,
+            },
+            fh,
+            indent=2,
+        )
 
     rows = []
     for label, rel in runs.items():

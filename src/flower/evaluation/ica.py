@@ -21,6 +21,8 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from scipy.stats import spearmanr
 
+from flower.evaluation.dependence import abs_pearson, correlation_ratio
+
 
 def compute_mcc(
     true: np.ndarray, recovered: np.ndarray, method: str = "pearson"
@@ -117,28 +119,21 @@ def regression_residual(
 
 def _abs_correlation(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     """Per-column |Pearson correlation| of features ``x`` with a continuous
-    1-D ``y`` — a [0, 1] dependence score for a continuous condition."""
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float) - np.mean(y)
-    xc = x - x.mean(axis=0)
-    denom = np.sqrt((xc**2).sum(axis=0) * (y**2).sum())
-    num = np.abs((xc * y[:, None]).sum(axis=0))
-    return np.divide(num, denom, out=np.zeros_like(num), where=denom > 0)
+    1-D ``y`` — a [0, 1] dependence score for a continuous condition.
+
+    Thin alias kept so the ranking below stays put; see
+    :mod:`flower.evaluation.dependence` for the reportable metric family.
+    """
+    return abs_pearson(x, y)
 
 
 def _correlation_ratio(x: np.ndarray, labels: np.ndarray) -> np.ndarray:
     """Per-column correlation ratio eta^2 (between-group variance fraction) of
-    features ``x`` w.r.t. discrete ``labels`` — a [0, 1] dependence score."""
-    x = np.asarray(x, dtype=float)
-    grand = x.mean(axis=0)
-    ss_total = ((x - grand) ** 2).sum(axis=0)
-    ss_between = np.zeros(x.shape[1])
-    for lab in np.unique(labels):
-        group = x[labels == lab]
-        ss_between += group.shape[0] * (group.mean(axis=0) - grand) ** 2
-    return np.divide(
-        ss_between, ss_total, out=np.zeros_like(ss_between), where=ss_total > 0
-    )
+    features ``x`` w.r.t. discrete ``labels`` — a [0, 1] dependence score.
+
+    Thin alias; see :func:`flower.evaluation.dependence.correlation_ratio`.
+    """
+    return correlation_ratio(x, labels, squared=True)
 
 
 def drop_top_k_dependent(

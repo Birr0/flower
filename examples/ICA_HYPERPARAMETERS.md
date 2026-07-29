@@ -46,6 +46,43 @@ Point-estimate sweeps use:
 
 Bootstrap-CI benchmarks (`ivae_benchmark.py`) use `evaluate_embedding_{classifier,regressor}` with `n_iterations=1000`; MNIST probe families `{log_regression, 2-mlp=(64,32)}` / `{lin_regression, 2-mlp=(64,32)}`.
 
+## Probe-free dependence metrics (`correlation_metrics.py`)
+
+`flower.evaluation.dependence` — per-dimension, closed-form, **no fitted
+hyperparameters**, so there is nothing here to tune or drift. Computed on the
+**test split only** (no train/test split is needed: nothing is fitted). Scores are
+scale-invariant, so the StandardScaler upstream does not move them. Reported as
+the per-representation `max` over coordinates (the worst single-coordinate leak),
+with `mean` and `n_above` (threshold `0.1`) also in the CSV.
+
+| variable type | metric | used for |
+|---|---|---|
+| continuous condition | `abs_pearson`, `abs_spearman` | spectra redshift `z` |
+| categorical condition | `correlation_ratio`, reported as `eta` (`squared=False`, so it shares the \|r\| scale) | MNIST digit, 2D-Gaussians mode |
+| circular / multi-column | `multiple_correlation` | MNIST rotation, vs `[sin 2θ, cos 2θ]` |
+| confounded target | `partial_correlation(rank=True)` | spectra logM\*/logSFR/A_v given `z`; MNIST colour/rotation given one-hot digit |
+
+Two choices that matter for reproducing the numbers:
+
+- **`partial_spearman`, not `partial_pearson`, for spectra.** Control removal is a
+  least-squares fit, so a *linearly* removed control that acts nonlinearly is
+  barely removed at all (a `z**3` confound still reads ~1.0; see
+  `tests/test_evaluation_dependence.py`). Rank-partial is the default.
+- **MNIST rotation is period-180.** `compute_rotation.py` returns a principal-axis
+  orientation (`0.5·atan2`), so ±90° are the *same* orientation. The angle is
+  doubled before forming `[sin, cos]`. The `rot_naive_max` column keeps the
+  wrapped |Spearman| for comparison — and the existing `rot_r2_linreg`/`rot_r2_mlp`
+  probe columns share the wrapped-target problem.
+
+`null_level` in each CSV is the score expected for *independent* data at that `n`
+(|r|: `1/√(n−1)`; `eta`: `√((G−1)/(n−1))`), since these statistics floor at chance
+rather than zero.
+
+2D-Gaussians point-estimate probes (`correlation_metrics.py` only; the bootstrap
+variants live in `ivae_benchmark.py`): `LogisticRegression(max_iter=1000)`,
+`MLPClassifier((64,64), max_iter=1000)`, `LinearRegression()`,
+`MLPRegressor((64,64), max_iter=1000)`.
+
 ## Residual constructions
 
 | method | function | setting |

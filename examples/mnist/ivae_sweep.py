@@ -139,7 +139,20 @@ def evaluate(x_tr, x_te, dig_tr, dig_te, b_tr, b_te, rot_tr=None, rot_te=None):
 
     Digit = condition (want removed). Colour ``b`` and rotation = independent
     factors (want preserved); rotation is optional (needs the cached CSVs).
+
+    Every representation is standardised (scaler fit on train) immediately before
+    probing. The raw embedding and the FastICA sources are already unit-scale (the
+    latter by ``whiten="unit-variance"``), but iVAE sources are raw encoder ``mu``
+    values whose per-dimension scales differ by more than an order of magnitude.
+    Probing those unscaled makes ``MLPClassifier``/``MLPRegressor`` fail to converge
+    erratically depending on which columns survive the drop sweep, and additionally
+    distorts ``LogisticRegression``, whose L2 penalty is not scale-invariant. On the
+    spectra analogue this produced accuracy curves that *improved* as coordinates
+    were deleted — impossible for nested feature sets — in the direction that
+    flatters the baseline. See ``examples/spectra/ivae_sweep_paper_eval.py``.
     """
+    sc = StandardScaler().fit(x_tr)
+    x_tr, x_te = sc.transform(x_tr), sc.transform(x_te)
     out = {
         "digit_acc_logreg": _digit_acc(x_tr, x_te, dig_tr, dig_te, "logreg"),
         "digit_acc_mlp": _digit_acc(x_tr, x_te, dig_tr, dig_te, "mlp"),
@@ -171,6 +184,13 @@ def main():
         default=None,
         help="dir with {train,test}_rotation_aligned.csv to add rotation as a "
         "second preservation target (see compute_rotation.py)",
+    )
+    parser.add_argument(
+        "--skip-residb",
+        action="store_true",
+        help="skip the residual-B (mean / conditional-prior subtraction) rows and "
+        "sweep only residual A. Mean-residualisation is near-idempotent and is "
+        "covered by iterated_residual.py, so the drop sweep is the informative arm.",
     )
     parser.add_argument("--seed", type=int, default=RANDOM_STATE)
     args = parser.parse_args()
@@ -255,14 +275,17 @@ def main():
 
     for name, (s_tr, s_te, pm_tr, pm_te) in sources.items():
         # Residual B (subtract the digit mean).
-        if name == "FastICA":
-            rB_tr, means = conditional_mean_residual(s_tr, dig_tr)
-            rB_te, _ = conditional_mean_residual(s_te, dig_te, means)
-        else:
-            rB_tr = conditional_prior_residual(s_tr, pm_tr)
-            rB_te = conditional_prior_residual(s_te, pm_te)
-        print(f"Evaluating: {name} residual B")
-        rows.append({"source": name, "method": "residB", "k": 0, **ev(rB_tr, rB_te)})
+        if not args.skip_residb:
+            if name == "FastICA":
+                rB_tr, means = conditional_mean_residual(s_tr, dig_tr)
+                rB_te, _ = conditional_mean_residual(s_te, dig_te, means)
+            else:
+                rB_tr = conditional_prior_residual(s_tr, pm_tr)
+                rB_te = conditional_prior_residual(s_te, pm_te)
+            print(f"Evaluating: {name} residual B")
+            rows.append(
+                {"source": name, "method": "residB", "k": 0, **ev(rB_tr, rB_te)}
+            )
 
         # Residual A(k): drop the k most digit-dependent sources (rank on train).
         for k in k_grid:

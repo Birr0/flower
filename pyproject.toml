@@ -28,6 +28,7 @@ classifiers = [
 ]
 dependencies = [
     "datasets>=4.8.4",
+    "dcor>=0.7",
     "scikit-image>=0.26.0",
     "spender",
     "torch>=2.4.0",
