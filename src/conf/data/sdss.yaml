@@ -25,12 +25,12 @@ loader:
       x_ds: ${....x_ds}
       y_catalog: ${....y_catalog}
     val:
-      _target_: flower..data.sdss.SDSS
+      _target_: flower.data.sdss.SDSS
       split: "val"
       x_ds: ${....x_ds}
       y_catalog: ${....y_catalog}
     test:
-      _target_: flower..data.sdss.SDSS
+      _target_: flower.data.sdss.SDSS
       split: "test"
       x_ds: ${....x_ds}
       y_catalog: ${....y_catalog}

@@ -15,7 +15,9 @@ import pyarrow.parquet as pq
 import pytest
 import torch
 import torch.nn as nn
+from hydra.utils import get_object
 from lightning.pytorch import Trainer
+from omegaconf import OmegaConf
 from torch.utils.data import Dataset
 
 from flower.data.modules import FlowerDataLoader
@@ -815,3 +817,71 @@ def mock_dsprites_env(tmp_dsprites_data):
         os.environ, {"DATA_ROOT": str(tmp_dsprites_data.parent)}, clear=False
     ):
         yield tmp_dsprites_data
+
+
+# ===========================================================================
+# 5. Real-YAML config verification
+#
+# The `load_config` fixture above builds config dicts in Python, mirroring the
+# YAML by hand. That cannot catch drift in the actual files under `src/conf/`,
+# which is how five malformed `_target_` paths ("flower..data.…") survived from
+# the initial commit until issue #34. These tests read the YAML off disk.
+# ===========================================================================
+
+_DATA_CONF_DIR = _ROOT / "src" / "conf" / "data"
+
+
+def _iter_targets(node, trail=""):
+    """Yield (yaml_path, target) for every `_target_` under `node`."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "_target_":
+                yield trail or "<root>", value
+            else:
+                yield from _iter_targets(value, f"{trail}.{key}" if trail else key)
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            yield from _iter_targets(value, f"{trail}[{i}]")
+
+
+def _data_config_files():
+    return sorted(_DATA_CONF_DIR.glob("*.yaml"))
+
+
+class TestDataConfigTargets:
+    """Every `_target_` in `src/conf/data/` must be importable.
+
+    `cfg.data.loader` is instantiated recursively, so an unresolvable target
+    raises at construction time -- before `FlowerDataLoader.setup()` is ever
+    reached -- and takes down every callback that monitors `val_loss` with it.
+    """
+
+    def test_data_configs_found(self):
+        assert _data_config_files(), f"no data configs under {_DATA_CONF_DIR}"
+
+    @pytest.mark.parametrize("config_path", _data_config_files(), ids=lambda p: p.name)
+    def test_every_target_resolves(self, config_path, tmp_path):
+        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
+        targets = list(_iter_targets(cfg))
+        assert targets, f"{config_path.name} declares no _target_"
+
+        # `flower.data.sdss` reads DATA_ROOT at module scope, so importing it
+        # without a value raises TypeError rather than a helpful error.
+        with mock.patch.dict(os.environ, {"DATA_ROOT": str(tmp_path)}, clear=False):
+            for yaml_path, target in targets:
+                try:
+                    get_object(target)
+                except Exception as exc:
+                    pytest.fail(
+                        f"{config_path.name}: {yaml_path}._target_ = {target!r} "
+                        f"is not importable: {type(exc).__name__}: {exc}"
+                    )
+
+    @pytest.mark.parametrize("config_path", _data_config_files(), ids=lambda p: p.name)
+    def test_all_three_splits_declared(self, config_path):
+        """train/val/test must all be present -- #34 only broke val and test."""
+        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
+        datasets = cfg.get("loader", {}).get("datasets", {})
+        assert set(datasets) >= {"train", "val", "test"}, (
+            f"{config_path.name} loader.datasets is missing a split: {sorted(datasets)}"
+        )
