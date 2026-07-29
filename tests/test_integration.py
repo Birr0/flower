@@ -10,6 +10,7 @@ import warnings
 from pathlib import Path
 from unittest import mock
 
+import lightning as L
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
@@ -939,4 +940,73 @@ class TestDataConfigTargets:
         datasets = cfg.get("loader", {}).get("datasets", {})
         assert set(datasets) >= {"train", "val", "test"}, (
             f"{config_path.name} loader.datasets is missing a split: {sorted(datasets)}"
+        )
+
+
+_EXPERIMENT_CONF_DIR = _ROOT / "src" / "conf" / "experiment"
+
+
+def _experiment_config_files():
+    return sorted(_EXPERIMENT_CONF_DIR.rglob("*.yaml"))
+
+
+def _experiment_model_files():
+    return sorted(_EXPERIMENT_CONF_DIR.glob("*/model.yaml"))
+
+
+class TestExperimentConfigTargets:
+    """Every `_target_` under `src/conf/experiment/` must be importable.
+
+    Module moves are the failure mode here: when the Lightning modules were
+    relocated out of `flower.training.*` into the per-dataset `flower.models.*`
+    files, `rgbmnist_VAE/model.yaml` was left pointing at the old path and the
+    experiment could no longer be trained (#35). Nothing in the suite read the
+    real config tree, so it went unnoticed.
+    """
+
+    def test_experiment_configs_found(self):
+        assert _experiment_config_files(), f"nothing under {_EXPERIMENT_CONF_DIR}"
+
+    @pytest.mark.parametrize(
+        "config_path",
+        _experiment_config_files(),
+        ids=lambda p: f"{p.parent.name}/{p.name}",
+    )
+    def test_every_target_resolves(self, config_path, tmp_path):
+        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
+        with mock.patch.dict(os.environ, {"DATA_ROOT": str(tmp_path)}, clear=False):
+            for yaml_path, target in _iter_targets(cfg):
+                try:
+                    get_object(target)
+                except Exception as exc:
+                    pytest.fail(
+                        f"{config_path.parent.name}/{config_path.name}: "
+                        f"{yaml_path}._target_ = {target!r} is not importable: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+
+    @pytest.mark.parametrize(
+        "config_path", _experiment_model_files(), ids=lambda p: p.parent.name
+    )
+    def test_lightning_loader_is_a_lightning_module(self, config_path):
+        """`lightning_loader._target_` must name a LightningModule subclass.
+
+        Resolving the dotted path is not enough: a target that still imports but
+        no longer names a trainable module would pass the check above and fail at
+        `trainer.fit`.
+        """
+        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
+        loader = cfg.get("lightning_loader")
+        assert loader, f"{config_path.parent.name}/model.yaml has no lightning_loader"
+        assert "_target_" in loader, (
+            f"{config_path.parent.name}: lightning_loader declares no _target_"
+        )
+        cls = get_object(loader["_target_"])
+        assert isinstance(cls, type), (
+            f"{config_path.parent.name}: lightning_loader._target_ = "
+            f"{loader['_target_']!r} is not a class"
+        )
+        assert issubclass(cls, L.LightningModule), (
+            f"{config_path.parent.name}: lightning_loader._target_ = "
+            f"{loader['_target_']!r} is not a LightningModule subclass"
         )

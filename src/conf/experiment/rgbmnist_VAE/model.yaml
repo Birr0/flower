@@ -3,7 +3,7 @@ model:
   hidden_dim: 64
 
 lightning_loader: # keep as default (populate the above with the correct config)
-  _target_: flower.training.rgbmnist.LightningVAE
+  _target_: flower.models.rgbmnist.LightningVAE
   vae: ${model}
   lr: 0.0005
   batch_size: ${data.loader.batch_size}
