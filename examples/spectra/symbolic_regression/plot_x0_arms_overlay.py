@@ -33,30 +33,20 @@ from __future__ import annotations
 import argparse
 import os
 
-import matplotlib as mpl
-
-mpl.use("Agg")
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sympy as sp
 from astropy.cosmology import FlatLambdaCDM
+from figstyle import INK, INK_MUTED, SURFACE, target_label, tidy, use_science
 from latent_zero_limit import Z, load_fronts, reduce_to_redshift, to_sympy
 from mass_limit_overlay import kcorrection_model, limit_curve
 from val_rescore import build_merged
 
-INK = "#0b0b0b"
-INK_SECONDARY = "#52514e"
-INK_MUTED = "#8a897f"
-SURFACE = "#fcfcfb"
-
-# Two categorical series. Validated as a pair on surface #fcfcfb: worst adjacent CVD
-# separation dE 24.7 (protan), 33.6 normal vision -- both well clear of the floors.
 COND = "#2a78d6"
 ORIG = "#eb6834"
 TRUTH = "#0b0b0b"
-LIMIT = "#8a897f"
+LIMIT = "#6b6b6b"
 
 DEFAULT_COND_FRONTS = "LGM_FIB_P50"
 DEFAULT_ORIG_FRONTS = "origz_LGM_FIB_P50"
@@ -115,6 +105,12 @@ def main() -> None:
         help="use the volume-limited embeddings at this cut for the observed curve",
     )
     parser.add_argument("--tag", default="", help="suffix for the output filenames")
+    parser.add_argument(
+        "--zoom",
+        action="store_true",
+        help="scale the y-axis to the curves rather than the completeness limit, which"
+        " otherwise compresses them when the relation is shallow",
+    )
     parser.add_argument("--outdir", default="plot_x0_arms_overlay_results")
     args = parser.parse_args()
 
@@ -128,6 +124,9 @@ def main() -> None:
             f"{data_root}/vol_limited_embeddings_7655991_0_allsplits"
             f"/z={args.embeddings_cut}"
         )
+
+    style = use_science()
+    print(f"style: {style}")
 
     os.makedirs(args.outdir, exist_ok=True)
     suffix = f"_{args.tag}" if args.tag else ""
@@ -190,8 +189,14 @@ def main() -> None:
     pd.DataFrame(rows).to_csv(f"{stem}.csv", index=False)
     print(f"wrote {stem}.csv")
 
-    fig, ax = plt.subplots(figsize=(9.5, 6.2), facecolor=SURFACE)
-    ax.set_facecolor(SURFACE)
+    fig, (ax, rax) = plt.subplots(
+        2,
+        1,
+        figsize=(6.8, 5.6),
+        sharex=True,
+        height_ratios=[3.0, 1.0],
+        gridspec_kw={"hspace": 0.08},
+    )
     ax.hist2d(z_obs, m_obs, bins=[120, 120], cmap="Greys", cmin=1, alpha=0.55, zorder=1)
 
     for name, _, colour in arms:
@@ -234,31 +239,39 @@ def main() -> None:
     )
 
     ax.set_xlim(args.zmin, args.zmax)
-    # Include both median curves, or the bundles clip at high z.
-    tops = [np.nanmax(np.median(bundles[n], axis=0)) for n, _, _ in arms]
-    ax.set_ylim(
-        np.nanmin(limit) - 0.4, max(*tops, np.nanpercentile(m_obs, 99.5)) + 0.25
-    )
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
-    for side in ("left", "bottom"):
-        ax.spines[side].set_color(INK_MUTED)
-    ax.tick_params(colors=INK_SECONDARY, labelsize=9.5)
-    ax.set_xlabel("redshift $z$", fontsize=10.5, color=INK_SECONDARY)
-    ax.set_ylabel(
-        f"$\\log_{{10}}$ M$_*$  ({args.feature})", fontsize=10.5, color=INK_SECONDARY
-    )
+    medians = [np.median(bundles[n], axis=0) for n, _, _ in arms]
+    if args.zoom:
+        # The completeness limit runs far below a shallow relation and would flatten it.
+        lo = min(np.nanmin(m) for m in [*medians, emp_on_grid])
+        hi = max(np.nanmax(m) for m in [*medians, emp_on_grid])
+        pad = 0.12 * (hi - lo)
+        ax.set_ylim(lo - pad, hi + pad)
+    else:
+        tops = [np.nanmax(m) for m in medians]
+        ax.set_ylim(
+            np.nanmin(limit) - 0.4, max(*tops, np.nanpercentile(m_obs, 99.5)) + 0.25
+        )
+
+    # --- residual panel: what the mean |deviation| numbers actually look like ------
+    rax.axhline(0.0, color=TRUTH, linewidth=1.6, linestyle=(0, (1, 1.6)), zorder=3)
+    for (_name, _, colour), med in zip(arms, medians, strict=True):
+        rax.plot(z_grid, med - emp_on_grid, color=colour, linewidth=2.4, zorder=4)
+    span = max(np.nanmax(np.abs(m - emp_on_grid)) for m in medians)
+    rax.set_ylim(-1.15 * span, 1.15 * span)
+    tidy(rax)
+    rax.set_ylabel("curve $-$ observed\n(dex)", fontsize=8)
+    rax.set_xlabel("redshift $z$", fontsize=9)
+    tidy(ax, grid_axis=None)
+    ax.set_ylabel(f"$\\log_{{10}}$ M$_*$  ({target_label(args.feature)})", fontsize=9)
     ax.set_title(
-        "Zeroing the latents recovers the real M$_*$(z) relation — only when z was"
-        " conditioned out",
-        fontsize=12.5,
+        "Zeroing the latents recovers the real M$_*$(z) relation -- only when z"
+        " was conditioned out",
+        fontsize=10,
         color=INK,
         loc="left",
-        pad=14,
+        pad=8,
     )
-    leg = ax.legend(
-        frameon=False, fontsize=9.5, labelcolor=INK_SECONDARY, loc="lower right"
-    )
+    leg = ax.legend(frameon=False, fontsize=7.5, loc="lower right")
     for line in leg.get_lines():
         line.set_alpha(1.0)
         line.set_linewidth(2.2)
@@ -273,8 +286,8 @@ def main() -> None:
         f"  orig+z   {orig_dev:.3f} dex",
         transform=ax.transAxes,
         va="top",
-        fontsize=9.5,
-        color=INK_SECONDARY,
+        fontsize=7,
+        color=INK_MUTED,
         family="monospace",
     )
     fig.text(
@@ -285,11 +298,11 @@ def main() -> None:
         "\nBoth bundles are internally tight; only cond+z lands on the observed"
         " relation, so internal agreement cannot separate them."
         "\nDensity is the observed test split.",
-        fontsize=7.8,
+        fontsize=6.5,
         color=INK_MUTED,
     )
     fig.tight_layout()
-    fig.savefig(f"{stem}.png", dpi=200, bbox_inches="tight", facecolor=SURFACE)
+    fig.savefig(f"{stem}.png", dpi=300, bbox_inches="tight", facecolor=SURFACE)
     print(f"wrote {stem}.png")
 
 
