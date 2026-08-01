@@ -57,7 +57,14 @@ from figstyle import (
 
 
 def frontier(prefix: str, arm: str, min_seeds: int = 2) -> pd.DataFrame:
-    """Median test R^2 per expression length, over seeds."""
+    """Per-length seed statistics: mean, spread and count.
+
+    The figure plots the mean only. Spread is carried in the CSV (``lo``/``hi``/``sd``)
+    rather than drawn, because it is negligible at this scale -- the widest min-max
+    range across seeds is 0.051 for ``cond+z`` and 0.000 for ``z`` -- so a band is an
+    invisible ribbon under every line. Quote the numbers in the caption instead if a
+    reader needs reassurance that the arm ordering is not seed noise.
+    """
     paths = sorted(glob.glob(f"job_results_{prefix}_{arm}_seed*/pareto_fronts.csv"))
     if not paths:
         return pd.DataFrame()
@@ -74,7 +81,15 @@ def frontier(prefix: str, arm: str, min_seeds: int = 2) -> pd.DataFrame:
     df = pd.concat(best)
 
     g = df.groupby("Length")["Test_R2"]
-    out = pd.DataFrame({"median": g.median(), "n_seeds": g.count()})
+    out = pd.DataFrame(
+        {
+            "mean": g.mean(),
+            "lo": g.min(),
+            "hi": g.max(),
+            "sd": g.std(),
+            "n_seeds": g.count(),
+        }
+    )
     return out[out["n_seeds"] >= min_seeds]
 
 
@@ -100,13 +115,20 @@ def main() -> None:
             print(f"  [warn] no fronts for {arm}")
             continue
         curves[arm] = f
-        print(f"  {arm:7s}: {len(f)} lengths, ceiling {f['median'].max():.3f}")
+        widest = (f["hi"] - f["lo"]).max()
+        print(
+            f"  {arm:7s}: {len(f)} lengths, ceiling {f['mean'].max():.3f}, "
+            f"widest seed spread {widest:.3f}"
+        )
         for length, r in f.iterrows():
             rows.append(
                 {
                     "arm": arm,
                     "Length": length,
-                    "median_Test_R2": r["median"],
+                    "mean_Test_R2": r["mean"],
+                    "min_Test_R2": r["lo"],
+                    "max_Test_R2": r["hi"],
+                    "sd_Test_R2": r["sd"],
                     "n_seeds": int(r["n_seeds"]),
                 }
             )
@@ -124,7 +146,7 @@ def main() -> None:
         colour = ARM_COLOUR[arm]
         ax.plot(
             f.index,
-            f["median"],
+            f["mean"],
             "-o",
             color=colour,
             linewidth=2.0,
@@ -137,7 +159,7 @@ def main() -> None:
         last = f.index.max()
         ax.annotate(
             arm,
-            xy=(last, f.loc[last, "median"]),
+            xy=(last, f.loc[last, "mean"]),
             xytext=(6, 0),
             textcoords="offset points",
             color=colour,
@@ -147,7 +169,7 @@ def main() -> None:
 
     ax.set_xlim(right=xmax + 4.5)
     ax.set_xlabel("expression length", fontsize=9)
-    ax.set_ylabel("test $R^2$ (median over 3 seeds)", fontsize=9)
+    ax.set_ylabel("test $R^2$", fontsize=9)
     ax.set_title(
         "Accuracy against expression complexity, by representation",
         fontsize=10,
@@ -159,11 +181,12 @@ def main() -> None:
     fig.text(
         0.0,
         -0.06,
-        f"Target: {target_label(args.fronts_prefix)}, seeds 42/43/44. Medians over"
-        " seeds at lengths reached by at least two seeds; each curve is the best"
-        "\naccuracy achievable at that complexity or below. Redshift alone (z) reaches"
-        " 0.589 -- the first sign that much of what these representations\nencode is"
-        " the survey's selection function rather than the physics.",
+        f"Target: {target_label(args.fronts_prefix)}. Mean over seeds 42/43/44, at"
+        " lengths reached by at least two seeds."
+        "\nEach curve is the best accuracy achievable at that"
+        " complexity or below. Redshift alone (z) reaches 0.589 -- the first"
+        "\nsign that much of what these representations encode is the survey's"
+        " selection function rather than the physics.",
         fontsize=6.5,
         color=INK_MUTED,
     )
