@@ -56,6 +56,7 @@ mpl.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from run_orig_z import swap_cond_for_orig
 from scipy.stats import spearmanr
 from val_rescore import build_matrices, build_merged
 
@@ -148,6 +149,11 @@ def main() -> None:
     parser.add_argument("--embeddings-cut", default=None)
     parser.add_argument("--galspec", default=f"{data_root}/galSpecExtra-dr8.fits")
     parser.add_argument("--specgals-home", default=f"{data_root}/sdss")
+    parser.add_argument(
+        "--swap-cond-for-orig",
+        action="store_true",
+        help="identify orig's coordinates instead of cond's (run_orig_z's swap)",
+    )
     parser.add_argument("--outdir", default="identify_x9_results")
     args = parser.parse_args()
 
@@ -164,6 +170,10 @@ def main() -> None:
     stem = f"{args.outdir}/identify_{args.latent.lower()}_{tag}"
 
     merged = build_merged(root, args.galspec, args.specgals_home)
+    if args.swap_cond_for_orig:
+        print("  identifying orig's coordinates: cond column <- orig")
+        merged = swap_cond_for_orig(merged)
+        stem = f"{stem}_origz"
     mats = build_matrices(merged, args.feature, "cond+z")
     X = mats["X_test"]
 
