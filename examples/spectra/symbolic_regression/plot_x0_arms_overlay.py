@@ -58,7 +58,8 @@ ORIG = "#eb6834"
 TRUTH = "#0b0b0b"
 LIMIT = "#8a897f"
 
-ARMS = [("cond+z", "LGM_FIB_P50", COND), ("orig+z", "origz_LGM_FIB_P50", ORIG)]
+DEFAULT_COND_FRONTS = "LGM_FIB_P50"
+DEFAULT_ORIG_FRONTS = "origz_LGM_FIB_P50"
 
 
 def reductions(feature: str, z_grid: np.ndarray) -> np.ndarray:
@@ -98,13 +99,41 @@ def main() -> None:
     parser.add_argument("--envelope-pct", type=float, default=5.0)
     parser.add_argument("--zmin", type=float, default=0.02)
     parser.add_argument("--zmax", type=float, default=0.3)
+    parser.add_argument(
+        "--cond-fronts",
+        default=DEFAULT_COND_FRONTS,
+        help="job_results_{this}_cond+z_seed*/ for the conditioned arm",
+    )
+    parser.add_argument(
+        "--orig-fronts",
+        default=DEFAULT_ORIG_FRONTS,
+        help="job_results_{this}_cond+z_seed*/ for the orig+z control",
+    )
+    parser.add_argument(
+        "--embeddings-cut",
+        default=None,
+        help="use the volume-limited embeddings at this cut for the observed curve",
+    )
+    parser.add_argument("--tag", default="", help="suffix for the output filenames")
     parser.add_argument("--outdir", default="plot_x0_arms_overlay_results")
     args = parser.parse_args()
 
-    os.makedirs(args.outdir, exist_ok=True)
-    stem = f"{args.outdir}/plot_x0_arms_overlay"
+    arms = [
+        ("cond+z", args.cond_fronts, COND),
+        ("orig+z", args.orig_fronts, ORIG),
+    ]
+    root = args.embeddings
+    if args.embeddings_cut:
+        root = (
+            f"{data_root}/vol_limited_embeddings_7655991_0_allsplits"
+            f"/z={args.embeddings_cut}"
+        )
 
-    merged = build_merged(args.embeddings, args.galspec, args.specgals_home)
+    os.makedirs(args.outdir, exist_ok=True)
+    suffix = f"_{args.tag}" if args.tag else ""
+    stem = f"{args.outdir}/plot_x0_arms_overlay{suffix}"
+
+    merged = build_merged(root, args.galspec, args.specgals_home)
     test = merged["test"]
     test = test[np.isfinite(test[args.feature]) & (test[args.feature] != -9999.0)]
     z_obs = test["z_x"].to_numpy()
@@ -138,7 +167,7 @@ def main() -> None:
 
     rows = []
     bundles = {}
-    for name, feature, _ in ARMS:
+    for name, feature, _ in arms:
         curves = reductions(feature, z_grid)
         bundles[name] = curves
         median = np.median(curves, axis=0)
@@ -165,7 +194,7 @@ def main() -> None:
     ax.set_facecolor(SURFACE)
     ax.hist2d(z_obs, m_obs, bins=[120, 120], cmap="Greys", cmin=1, alpha=0.55, zorder=1)
 
-    for name, _, colour in ARMS:
+    for name, _, colour in arms:
         for i, c in enumerate(bundles[name]):
             ax.plot(
                 z_grid,
@@ -206,7 +235,7 @@ def main() -> None:
 
     ax.set_xlim(args.zmin, args.zmax)
     # Include both median curves, or the bundles clip at high z.
-    tops = [np.nanmax(np.median(bundles[n], axis=0)) for n, _, _ in ARMS]
+    tops = [np.nanmax(np.median(bundles[n], axis=0)) for n, _, _ in arms]
     ax.set_ylim(
         np.nanmin(limit) - 0.4, max(*tops, np.nanpercentile(m_obs, 99.5)) + 0.25
     )
