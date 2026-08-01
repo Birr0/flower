@@ -25,12 +25,22 @@ colour alone.
 
 from __future__ import annotations
 
+import os
+import shutil
+
 import matplotlib as mpl
 
 mpl.use("Agg")
 
 import matplotlib.pyplot as plt
 import scienceplots  # noqa: F401  -- registers the styles with matplotlib
+
+# Portable TeX Live, as used by the notebooks (equation_explorer.ipynb,
+# pareto_fronts.ipynb). The system LaTeX on this machine cannot drive usetex -- it has
+# latex and gs but no dvipng, no type1ec.sty and no cm-super -- so this tree is what
+# makes real LaTeX typesetting possible. Restore it and the figures pick it up with no
+# code change.
+TEXLIVE_BIN = "texlive_store/texlive/bin/x86_64-linux"
 
 ARM_COLOUR = {
     "cond+z": "#2a78d6",
@@ -62,11 +72,41 @@ INK_MUTED = "#6b6b6b"
 SURFACE = "white"
 
 
+def _add_portable_texlive() -> str | None:
+    """Prepend the portable TeX Live to PATH if it is present. Returns the path used."""
+    data_root = os.environ.get("DATA_ROOT")
+    if not data_root:
+        return None
+    candidate = os.path.join(data_root, TEXLIVE_BIN)
+    if not os.path.isdir(candidate):
+        return None
+    if candidate not in os.environ.get("PATH", "").split(os.pathsep):
+        os.environ["PATH"] = candidate + os.pathsep + os.environ.get("PATH", "")
+    return candidate
+
+
+def latex_available() -> tuple[bool, list[str]]:
+    """Whether usetex can actually render, and what is missing if not.
+
+    ``latex`` alone is not enough: matplotlib shells out to ``dvipng`` for raster
+    output, and the CM fonts need ``type1ec.sty``/``cm-super`` to be scalable.
+    """
+    missing = [b for b in ("latex", "dvipng") if shutil.which(b) is None]
+    return (not missing), missing
+
+
 def use_science() -> str:
     """Apply the science style, preferring real LaTeX.
 
     Returns the style actually used.
     """
+    tex = _add_portable_texlive()
+    if tex:
+        print(f"  using portable TeX Live at {tex}")
+    ok, missing = latex_available()
+    if not ok:
+        print(f"  LaTeX unavailable ({', '.join(missing)} missing) -- falling back")
+
     for style in (["science"], ["science", "no-latex"]):
         try:
             plt.style.use(style)
