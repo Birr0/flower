@@ -45,14 +45,15 @@ import pandas as pd
 from run_total_mass import EMBED_TYPES, SEEDS, run_cell
 from val_rescore import build_merged
 
-Z_CUTS = ["0.050", "0.075", "0.100", "0.125", "0.150"]
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     data_root = os.environ.get("DATA_ROOT", "/home/birr0/local_data")
     parser.add_argument("--feature", default="lgm_tot_p50")
-    parser.add_argument("--cut", default="0.150", choices=Z_CUTS)
+    # No `choices`: cuts are whatever make_volume_limited.py has built. The directory
+    # check below gives a better error than argparse would, and naming the five original
+    # cuts here would silently block any new one.
+    parser.add_argument("--cut", default="0.150")
     parser.add_argument("--embed-type", default=None, choices=EMBED_TYPES)
     parser.add_argument("--seed", type=int, default=None, choices=SEEDS)
     parser.add_argument(

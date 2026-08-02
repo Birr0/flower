@@ -101,7 +101,9 @@ def main() -> None:
     data_root = os.environ.get("DATA_ROOT", "/home/birr0/local_data")
     parser.add_argument("--flux-prefix", default="lgm_tot_p50")
     parser.add_argument(
-        "--cuts", nargs="+", default=["0.050", "0.075", "0.100", "0.125", "0.150"]
+        "--cuts",
+        nargs="+",
+        default=["0.050", "0.075", "0.100", "0.125", "0.150", "0.200"],
     )
     parser.add_argument("--target", default="lgm_tot_p50")
     parser.add_argument(
@@ -173,7 +175,7 @@ def main() -> None:
     print(f"wrote {stem}.csv")
 
     latent = df[df["arm"] != "z"]
-    spans = {c: latent[f"{c}_rmse"].max() - latent[f"{c}_rmse"].min() for c in present}
+    spans = {c: latent[f"{c}_norm"].max() - latent[f"{c}_norm"].min() for c in present}
     span_flux = latent["flux_limited_norm"].max() - latent["flux_limited_norm"].min()
     print(
         f"latent-arm RMSE/sigma span: flux {span_flux:.3f} | "
@@ -267,7 +269,7 @@ def main() -> None:
         " budget, as in Figure 1. Error is divided by each sample's own target"
         "\nspread, because a wider volume-limited cut carries a brighter magnitude"
         " limit and so a narrower range of stellar masses (sigma falls 0.585"
-        "\nto 0.240 dex); raw RMSE is not comparable across samples. A value of 1"
+        "\nto 0.190 dex); raw RMSE is not comparable across samples. A value of 1"
         " means the model does no better than predicting the sample mean."
         "\nThe flux-limited sample is not a cut -- it reaches z ~ 0.3 -- so it is drawn"
         " apart, tied to the sequence by a dotted line.",
