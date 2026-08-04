@@ -1,0 +1,44 @@
+Probe-free dependence metrics — RGB-MNIST (condition = digit)
+digit_eta_max: LOWER = better removal | b/rot: HIGHER = better preservation
+chance level for eta at n=10000: 0.0300
+
+       source    method  k  n_dims  digit_eta_max  digit_eta_n_above  digit_acc_mlp  b_raw_max  b_partial_max  rot_naive_max  rot_circular_max
+          Raw      none  0      64          0.686                 64          0.979      0.574          0.657          0.648             0.707
+  Flower-cond embedding  0      64          0.429                 63          0.792      0.391          0.410          0.481             0.504
+Flower-uncond embedding  0      64          0.509                 63          0.923      0.395          0.412          0.484             0.507
+      FastICA    residB  0      64          0.080                  0          0.858      0.971          0.971          0.335             0.498
+      FastICA    residA  1      63          0.720                 20          0.954      0.969          0.971          0.322             0.474
+      FastICA    residA  7      57          0.516                 14          0.815      0.969          0.971          0.320             0.474
+      FastICA    residA 13      51          0.358                  8          0.484      0.969          0.971          0.261             0.474
+      FastICA    residA 20      44          0.173                  1          0.183      0.969          0.971          0.107             0.204
+      FastICA    residA 26      38          0.064                  0          0.142      0.035          0.035          0.033             0.035
+      FastICA    residA 32      32          0.057                  0          0.129      0.035          0.035          0.033             0.035
+      FastICA    residA 38      26          0.057                  0          0.129      0.026          0.026          0.033             0.035
+      FastICA    residA 44      20          0.054                  0          0.123      0.026          0.026          0.033             0.035
+      FastICA    residA 51      13          0.046                  0          0.116      0.014          0.015          0.033             0.035
+      FastICA    residA 57       7          0.041                  0          0.112      0.014          0.014          0.033             0.035
+      FastICA    residA 63       1          0.029                  0          0.114      0.014          0.014          0.011             0.032
+    iVAE-cond    residB  0      64          0.836                 40          0.999      0.510          0.510          0.516             0.554
+    iVAE-cond    residA  1      63          0.988                 63          0.994      0.459          0.502          0.482             0.528
+    iVAE-cond    residA  7      57          0.956                 57          0.993      0.459          0.502          0.482             0.528
+    iVAE-cond    residA 13      51          0.931                 51          0.992      0.459          0.502          0.482             0.528
+    iVAE-cond    residA 20      44          0.839                 44          0.992      0.459          0.502          0.482             0.528
+    iVAE-cond    residA 26      38          0.804                 38          0.988      0.459          0.502          0.482             0.528
+    iVAE-cond    residA 32      32          0.761                 32          0.983      0.459          0.502          0.482             0.528
+    iVAE-cond    residA 38      26          0.706                 26          0.967      0.459          0.502          0.482             0.528
+    iVAE-cond    residA 44      20          0.637                 20          0.934      0.459          0.502          0.482             0.528
+    iVAE-cond    residA 51      13          0.497                 13          0.763      0.459          0.502          0.482             0.528
+    iVAE-cond    residA 57       7          0.364                  7          0.416      0.459          0.466          0.482             0.528
+    iVAE-cond    residA 63       1          0.201                  1          0.164      0.459          0.466          0.175             0.187
+    iVAE-fair    residB  0      64          0.918                 50          1.000      0.404          0.406          0.482             0.505
+    iVAE-fair    residA  1      63          0.583                 63          0.881      0.321          0.401          0.541             0.557
+    iVAE-fair    residA  7      57          0.537                 57          0.881      0.286          0.331          0.541             0.557
+    iVAE-fair    residA 13      51          0.514                 51          0.869      0.286          0.331          0.541             0.557
+    iVAE-fair    residA 20      44          0.504                 44          0.879      0.286          0.330          0.541             0.557
+    iVAE-fair    residA 26      38          0.503                 38          0.871      0.286          0.330          0.541             0.557
+    iVAE-fair    residA 32      32          0.503                 32          0.871      0.286          0.330          0.541             0.557
+    iVAE-fair    residA 38      26          0.503                 26          0.867      0.286          0.330          0.541             0.557
+    iVAE-fair    residA 44      20          0.503                 20          0.843      0.286          0.330          0.541             0.557
+    iVAE-fair    residA 51      13          0.498                 13          0.789      0.286          0.327          0.541             0.557
+    iVAE-fair    residA 57       7          0.487                  7          0.662      0.286          0.327          0.541             0.557
+    iVAE-fair    residA 63       1          0.383                  1          0.205      0.261          0.283          0.541             0.557

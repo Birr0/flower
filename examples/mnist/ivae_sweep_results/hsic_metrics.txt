@@ -1,0 +1,13 @@
+HSIC (normalized, fixed sqrt(d) bandwidth) — RGB-MNIST
+digit: LOWER = less detected dependence | b/rot: HIGHER = more preserved
+n_subsample=2000, n_perm=2000; smallest attainable p = 0.00050
+Read one-sided: rejecting independence is evidence of dependence;
+failing to reject is NOT evidence of independence.
+
+       source    method  k  n_dims  digit_hsic  digit_null  digit_p  b_hsic  b_null    b_p  rot_hsic  rot_null  rot_p
+          Raw      none  0      64      0.4158      0.0108   0.0005  0.1751  0.0050 0.0005    0.3053    0.0065 0.0005
+  Flower-cond embedding  0      64      0.1731      0.0164   0.0005  0.1120  0.0076 0.0005    0.1738    0.0098 0.0005
+Flower-uncond embedding  0      64      0.2232      0.0157   0.0005  0.1072  0.0073 0.0005    0.1702    0.0094 0.0005
+      FastICA    residB  0      64      0.0310      0.0191   0.0005  0.1127  0.0088 0.0005    0.1476    0.0115 0.0005
+    iVAE-cond    residB  0      64      0.4115      0.0094   0.0005  0.1107  0.0044 0.0005    0.2255    0.0056 0.0005
+    iVAE-fair    residB  0      64      0.1848      0.0032   0.0005  0.0517  0.0015 0.0005    0.1355    0.0019 0.0005

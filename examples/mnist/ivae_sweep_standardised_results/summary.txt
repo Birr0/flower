@@ -1,0 +1,38 @@
+ICA-baseline sweep on RGB-MNIST (class-only; condition = digit)
+digit acc: lower = better removal (chance 0.10) | b R2: higher = better preservation
+
+   source method  k  n_dims  digit_acc_logreg  digit_acc_mlp  b_r2_linreg  b_r2_mlp
+      Raw   none  0      64             0.947          0.979        0.959     0.990
+  FastICA residA  1      63             0.916          0.956        0.955     0.983
+  FastICA residA  7      57             0.580          0.814        0.948     0.975
+  FastICA residA 13      51             0.307          0.481        0.940     0.964
+  FastICA residA 20      44             0.157          0.177        0.931     0.949
+  FastICA residA 26      38             0.128          0.137        0.002     0.019
+  FastICA residA 32      32             0.124          0.129        0.002     0.024
+  FastICA residA 38      26             0.119          0.125        0.001     0.026
+  FastICA residA 44      20             0.119          0.121        0.001     0.035
+  FastICA residA 51      13             0.112          0.118        0.000     0.043
+  FastICA residA 57       7             0.112          0.108        0.000     0.033
+  FastICA residA 63       1             0.114          0.111        0.000     0.001
+iVAE-cond residA  1      63             1.000          1.000        0.962     0.988
+iVAE-cond residA  7      57             0.999          0.999        0.962     0.990
+iVAE-cond residA 13      51             0.999          0.999        0.962     0.990
+iVAE-cond residA 20      44             0.999          0.999        0.961     0.990
+iVAE-cond residA 26      38             0.999          1.000        0.961     0.991
+iVAE-cond residA 32      32             0.998          0.999        0.961     0.989
+iVAE-cond residA 38      26             0.992          0.996        0.961     0.990
+iVAE-cond residA 44      20             0.883          0.956        0.951     0.985
+iVAE-cond residA 51      13             0.532          0.759        0.848     0.915
+iVAE-cond residA 57       7             0.288          0.419        0.521     0.581
+iVAE-cond residA 63       1             0.157          0.165        0.197     0.215
+iVAE-fair residA  1      63             0.828          0.888        0.499     0.722
+iVAE-fair residA  7      57             0.825          0.880        0.480     0.673
+iVAE-fair residA 13      51             0.818          0.883        0.449     0.705
+iVAE-fair residA 20      44             0.806          0.876        0.484     0.681
+iVAE-fair residA 26      38             0.801          0.872        0.477     0.686
+iVAE-fair residA 32      32             0.794          0.875        0.435     0.644
+iVAE-fair residA 38      26             0.779          0.859        0.420     0.651
+iVAE-fair residA 44      20             0.744          0.845        0.425     0.573
+iVAE-fair residA 51      13             0.698          0.792        0.294     0.409
+iVAE-fair residA 57       7             0.587          0.666        0.136     0.210
+iVAE-fair residA 63       1             0.151          0.207        0.063     0.063

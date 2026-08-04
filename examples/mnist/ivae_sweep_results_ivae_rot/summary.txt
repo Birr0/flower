@@ -1,0 +1,38 @@
+ICA-baseline sweep on RGB-MNIST (class-only; condition = digit)
+digit acc: lower = better removal (chance 0.10) | b R2: higher = better preservation | rotation R2: higher = better preservation
+
+   source method  k  n_dims  digit_acc_logreg  digit_acc_mlp  b_r2_linreg  b_r2_mlp  rot_r2_linreg  rot_r2_mlp
+      Raw   none  0      64             0.947          0.979        0.959     0.990          0.660       0.924
+iVAE-cond residB  0      64             0.522          0.999        0.961     0.990          0.595       0.904
+iVAE-cond residA  1      63             0.958          0.994        0.961     0.991          0.659       0.919
+iVAE-cond residA  3      61             0.954          0.994        0.961     0.992          0.659       0.909
+iVAE-cond residA  5      59             0.951          0.994        0.961     0.992          0.659       0.920
+iVAE-cond residA  7      57             0.950          0.993        0.961     0.991          0.659       0.910
+iVAE-cond residA  9      55             0.950          0.992        0.961     0.991          0.659       0.918
+iVAE-cond residA 11      53             0.949          0.994        0.961     0.992          0.659       0.919
+iVAE-cond residA 13      51             0.949          0.992        0.961     0.990          0.659       0.914
+iVAE-cond residA 15      49             0.949          0.992        0.961     0.992          0.658       0.920
+iVAE-cond residA 17      47             0.948          0.993        0.961     0.992          0.658       0.919
+iVAE-cond residA 19      45             0.948          0.992        0.961     0.991          0.658       0.918
+iVAE-cond residA 21      43             0.918          0.991        0.960     0.992          0.651       0.917
+iVAE-cond residA 23      41             0.917          0.990        0.960     0.990          0.651       0.911
+iVAE-cond residA 25      39             0.915          0.988        0.960     0.992          0.651       0.904
+iVAE-cond residA 27      37             0.915          0.985        0.960     0.991          0.651       0.925
+iVAE-cond residA 29      35             0.916          0.985        0.960     0.991          0.651       0.915
+iVAE-cond residA 31      33             0.916          0.985        0.960     0.991          0.651       0.917
+iVAE-cond residA 33      31             0.916          0.980        0.960     0.991          0.651       0.918
+iVAE-cond residA 35      29             0.889          0.974        0.960     0.990          0.651       0.916
+iVAE-cond residA 37      27             0.889          0.969        0.960     0.991          0.651       0.926
+iVAE-cond residA 39      25             0.861          0.963        0.959     0.989          0.625       0.874
+iVAE-cond residA 41      23             0.821          0.946        0.958     0.989          0.614       0.890
+iVAE-cond residA 43      21             0.753          0.936        0.924     0.972          0.609       0.843
+iVAE-cond residA 45      19             0.673          0.924        0.924     0.969          0.582       0.831
+iVAE-cond residA 47      17             0.621          0.874        0.904     0.960          0.577       0.804
+iVAE-cond residA 49      15             0.575          0.829        0.863     0.929          0.540       0.731
+iVAE-cond residA 51      13             0.532          0.763        0.848     0.916          0.540       0.706
+iVAE-cond residA 53      11             0.443          0.680        0.580     0.736          0.517       0.666
+iVAE-cond residA 55       9             0.353          0.556        0.525     0.615          0.493       0.589
+iVAE-cond residA 57       7             0.288          0.416        0.521     0.588          0.348       0.413
+iVAE-cond residA 59       5             0.212          0.298        0.445     0.487          0.222       0.242
+iVAE-cond residA 61       3             0.171          0.240        0.220     0.258          0.220       0.234
+iVAE-cond residA 63       1             0.157          0.164        0.197     0.215          0.027       0.028
