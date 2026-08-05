@@ -1,0 +1,37 @@
+ICA-baseline sweep on RGB-MNIST (class-only; condition = digit)
+digit acc: lower = better removal (chance 0.10) | b R2: higher = better preservation | rotation R2: higher = better preservation
+
+ source method  k  n_dims  digit_acc_logreg  digit_acc_mlp  b_r2_linreg  b_r2_mlp  rot_r2_linreg  rot_r2_mlp
+    Raw   none  0      64             0.947          0.979        0.959     0.990          0.660       0.913
+FastICA residA  1      63             0.916          0.956        0.955     0.983          0.639       0.852
+FastICA residA  3      61             0.787          0.915        0.953     0.983          0.568       0.700
+FastICA residA  5      59             0.692          0.867        0.949     0.976          0.534       0.548
+FastICA residA  7      57             0.580          0.814        0.948     0.975          0.391       0.395
+FastICA residA  9      55             0.477          0.713        0.944     0.966          0.378       0.371
+FastICA residA 11      53             0.373          0.594        0.941     0.967          0.363       0.326
+FastICA residA 13      51             0.307          0.481        0.940     0.964          0.233       0.095
+FastICA residA 15      49             0.254          0.371        0.938     0.963          0.059      -0.103
+FastICA residA 17      47             0.200          0.267        0.933     0.956          0.017      -0.181
+FastICA residA 19      45             0.165          0.190        0.933     0.953          0.014      -0.176
+FastICA residA 21      43             0.138          0.160        0.931     0.948          0.002      -0.164
+FastICA residA 23      41             0.131          0.149        0.005     0.064          0.002      -0.152
+FastICA residA 25      39             0.129          0.141        0.002     0.003          0.002      -0.163
+FastICA residA 27      37             0.126          0.130        0.003    -0.009          0.002      -0.167
+FastICA residA 29      35             0.122          0.130        0.003     0.015          0.002      -0.142
+FastICA residA 31      33             0.122          0.129        0.003     0.035          0.001      -0.135
+FastICA residA 33      31             0.123          0.130        0.001     0.010          0.002      -0.146
+FastICA residA 35      29             0.121          0.127        0.001     0.024          0.001      -0.120
+FastICA residA 37      27             0.116          0.128        0.001     0.039          0.001      -0.117
+FastICA residA 39      25             0.119          0.119        0.001     0.027          0.002      -0.102
+FastICA residA 41      23             0.116          0.124        0.001     0.027          0.001      -0.102
+FastICA residA 43      21             0.117          0.121        0.001     0.034          0.001      -0.089
+FastICA residA 45      19             0.116          0.119        0.000     0.052          0.001      -0.084
+FastICA residA 47      17             0.114          0.119        0.001     0.052          0.001      -0.065
+FastICA residA 49      15             0.110          0.117        0.000     0.045          0.000      -0.063
+FastICA residA 51      13             0.112          0.118        0.000     0.043          0.000      -0.061
+FastICA residA 53      11             0.113          0.120        0.001     0.038          0.000      -0.043
+FastICA residA 55       9             0.112          0.107        0.000     0.029         -0.000      -0.027
+FastICA residA 57       7             0.112          0.108        0.000     0.033         -0.000      -0.020
+FastICA residA 59       5             0.113          0.112        0.000     0.026         -0.001      -0.004
+FastICA residA 61       3             0.114          0.108        0.000     0.010         -0.001       0.002
+FastICA residA 63       1             0.114          0.111        0.000     0.001         -0.001      -0.000

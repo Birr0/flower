@@ -1,0 +1,21 @@
+{
+  "args": {
+    "spender": "spender_I",
+    "epochs": 30,
+    "n_train": 200000,
+    "n_filter": 300000,
+    "n_k": 9,
+    "outdir": "ivae_sweep_paper_eval_results",
+    "seed": 42
+  },
+  "protocol": "embedding_benchmark.load_run(matched=False)",
+  "probe": {
+    "hidden_layer_sizes": [
+      64,
+      64
+    ],
+    "max_iter": 1000
+  },
+  "embed_path": "sdss_II/spender_I_flow_v2/spender_I_flow_v2/embeddings/7526202_0",
+  "ivae": "see ivae_sweep._dump_params"
+}

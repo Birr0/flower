@@ -1,0 +1,10 @@
+Probe-free dependence metrics — 2D-Gaussians toy (condition = mode)
+mode_eta_max: LOWER = better removal (chance acc 0.25) | dist/seed: HIGHER = better preservation
+chance level for eta at n=5000: 0.0245
+
+ source method  n_dims  mode_eta_max  mode_acc_mlp  dist_raw_max  dist_partial_max  seed_multiple_max  seed_mcc
+    Raw   none       2         0.974         1.000         0.011             0.009              0.228     0.213
+FastICA residA       1         0.974         0.493         0.004             0.000              0.198     0.198
+FastICA residB       2         0.044         0.250         0.009             0.009              1.000     1.000
+   iVAE residA       1         0.956         0.880         0.009             0.002              0.293     0.261
+   iVAE residB       2         0.052         0.263         0.012             0.011              0.999     0.865
