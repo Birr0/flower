@@ -1,0 +1,5 @@
+sweeps:
+  drop_variables:
+  - '["label_shape", "value_x_position", "value_y_position", "value_orientation_sin", "value_orientation_cos"]' # just scale in conditioning
+  seeds:
+  - 42
