@@ -1,0 +1,24 @@
+Fig 3b explainer — linear vs nonlinear probe of the residual across omega
+2D-Gaussian toy, seed taken at t=0 by CFG inversion of the shipped model
+3 seeds x 10000 samples; chance accuracy 0.25
+
+The test for injection is the raw-data row below: the seed cannot
+contain more residual than x_1 did. If the nonlinear probe on the seed
+stays at or under that ceiling while the linear probe climbs, guidance
+made the residual READABLE rather than adding any.
+
+raw data x_1 (ceiling): dx0 lin=0.057 mlp=0.996 | dist lin=0.000 mlp=0.996 | mode_mlp=1.000
+
+       dx0_r2_lin  dx0_r2_mlp  dx1_r2_lin  dx1_r2_mlp  dist_r2_lin  dist_r2_mlp  mode_acc_logreg  mode_acc_mlp
+omega
+0.0        0.3609      0.9717      0.3321      0.9878       0.0005       0.9767           0.9975        0.9995
+0.1        0.4182      0.5565      0.3884      0.5741       0.0005       0.8253           0.8423        0.8429
+0.2        0.4845      0.5650      0.4550      0.5267       0.0004       0.6473           0.7088        0.7163
+0.3        0.5600      0.6032      0.5321      0.5776       0.0004       0.4836           0.6132        0.6068
+0.4        0.6436      0.6753      0.6187      0.6496       0.0003       0.4238           0.5336        0.5300
+0.5        0.7317      0.7554      0.7121      0.7342       0.0002       0.4712           0.4639        0.4637
+0.6        0.8182      0.8323      0.8059      0.8181       0.0001       0.5896           0.4079        0.4000
+0.7        0.8951      0.9018      0.8904      0.8953      -0.0001       0.7387           0.3575        0.3487
+0.8        0.9538      0.9559      0.9544      0.9550      -0.0003       0.8784           0.3087        0.3068
+0.9        0.9881      0.9882      0.9897      0.9896      -0.0004       0.9689           0.2739        0.2777
+1.0        0.9968      0.9968      0.9943      0.9942      -0.0006       0.9873           0.2695        0.2724
