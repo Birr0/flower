@@ -1,0 +1,59 @@
+{
+  "args": {
+    "spender": "spender_I",
+    "epochs": 30,
+    "n_train": 200000,
+    "n_filter": 300000,
+    "n_k": 8,
+    "outdir": "ivae_sweep_matched_probe_results",
+    "seed": 42
+  },
+  "condition": "z",
+  "targets": [
+    "logM*",
+    "logSFR",
+    "A_v"
+  ],
+  "embed_path": "sdss_II/spender_I_flow_v2/spender_I_flow_v2/embeddings/7526202_0",
+  "ivae": {
+    "hidden_dim": 128,
+    "n_layers": 3,
+    "activation": "xtanh",
+    "slope": 0.1,
+    "decoder_var": 0.01,
+    "learn_prior_mean": true,
+    "condition_encoder": true,
+    "lr": 0.01,
+    "batch_size": 256,
+    "beta": 1.0,
+    "scheduler": "StepLR(step_size=epochs//3, gamma=0.3)"
+  },
+  "fastica": {
+    "n_components": "d",
+    "max_iter": 1000,
+    "whiten": "unit-variance"
+  },
+  "probes": {
+    "regressor_mlp": {
+      "hidden_layer_sizes": [
+        64,
+        64
+      ],
+      "max_iter": 1000
+    },
+    "regressor_linear": "LinearRegression"
+  },
+  "direct_residualisers": {
+    "linear": "LinearRegression",
+    "mlp": {
+      "hidden_layer_sizes": [
+        64,
+        32
+      ],
+      "max_iter": 300
+    },
+    "rf": {
+      "n_estimators": 100
+    }
+  }
+}

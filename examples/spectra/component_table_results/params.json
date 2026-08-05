@@ -1,0 +1,29 @@
+{
+  "args": {
+    "spender": "spender_I",
+    "epochs": 30,
+    "n_train": 40000,
+    "n_filter": 300000,
+    "outdir": "component_table_results",
+    "seed": 42
+  },
+  "n_bins": 20,
+  "nulls": {
+    "Raw (Spender)": {
+      "rho_null": 0.007193566494041047,
+      "eta_null": 0.025469622178021192
+    },
+    "FastICA": {
+      "rho_null": 0.014831928375709664,
+      "eta_null": 0.028978996209287955
+    },
+    "iVAE (cond-encoder)": {
+      "rho_null": 0.011289016162780042,
+      "eta_null": 0.025079984853206876
+    },
+    "Flower (cond seed)": {
+      "rho_null": 0.010064763199703576,
+      "eta_null": 0.027097725212032832
+    }
+  }
+}
