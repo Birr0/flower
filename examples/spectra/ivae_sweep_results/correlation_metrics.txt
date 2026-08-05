@@ -1,0 +1,29 @@
+Probe-free dependence metrics — spender_I (condition = redshift z)
+z_*_max: LOWER = better removal | *_partial_max: HIGHER = better preservation of non-redshift structure
+chance level for |rho| at n=43098: 0.0048
+
+       source    method  k  n_dims  z_pearson_max  z_spearman_max  z_spearman_n_above  z_r2_mlp  logM*_partial_max  logSFR_partial_max  A_v_partial_max
+          Raw      none  0      10          0.489           0.529                   7     0.555              0.675               0.633            0.549
+      FastICA    residB  0      10          0.010           0.212                   1     0.607              0.530               0.671            0.456
+         iVAE    residB  0      10          0.035           0.082                   0     0.434              0.645               0.581            0.582
+      FastICA    residA  1       9          0.361           0.385                   5     0.502              0.265               0.340            0.298
+      FastICA    residA  2       8          0.289           0.344                   4     0.389              0.265               0.340            0.298
+      FastICA    residA  3       7          0.164           0.147                   3     0.219              0.265               0.158            0.298
+      FastICA    residA  4       6          0.115           0.128                   2     0.163              0.265               0.158            0.298
+      FastICA    residA  6       4          0.084           0.048                   0     0.096              0.265               0.158            0.298
+      FastICA    residA  7       3          0.045           0.048                   0     0.029              0.265               0.158            0.298
+      FastICA    residA  8       2          0.011           0.012                   0     0.009              0.265               0.158            0.298
+      FastICA    residA  9       1          0.009           0.000                   0     0.030              0.265               0.010            0.298
+         iVAE    residA  1       9          0.455           0.451                   6     0.504              0.656               0.583            0.587
+         iVAE    residA  2       8          0.393           0.423                   5     0.375              0.107               0.534            0.587
+         iVAE    residA  3       7          0.335           0.340                   4     0.236              0.107               0.534            0.587
+         iVAE    residA  4       6          0.189           0.218                   3     0.155              0.075               0.534            0.587
+         iVAE    residA  6       4          0.096           0.104                   1     0.027              0.075               0.534            0.587
+         iVAE    residA  7       3          0.077           0.073                   0    -0.001              0.075               0.534            0.587
+         iVAE    residA  8       2          0.051           0.039                   0    -0.020              0.075               0.534            0.587
+         iVAE    residA  9       1          0.047           0.025                   0     0.007              0.071               0.534            0.587
+ Resid-linear    direct  0      10          0.011           0.123                   1     0.607              0.635               0.632            0.549
+    Resid-mlp    direct  0      10          0.024           0.073                   0     0.602              0.664               0.608            0.541
+     Resid-rf    direct  0      10          0.005           0.027                   0    -0.405              0.542               0.486            0.432
+  Flower-cond embedding  0      10          0.062           0.042                   0     0.028              0.435               0.437            0.435
+Flower-uncond embedding  0      10          0.367           0.378                   6     0.534              0.395               0.471            0.448

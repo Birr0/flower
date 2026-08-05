@@ -1,0 +1,32 @@
+ICA baselines vs Flower on spender_I spectra, embedding_benchmark protocol (probe (64,64)/1000, z-validity mask)
+z R2: LOWER = better removal | logM*/logSFR/A_v R2: HIGHER = better preservation
+
+       source    method  k  n_dims  z_r2_linreg  z_r2_mlp  logM*_r2_mlp  logSFR_r2_mlp  A_v_r2_mlp
+          Raw      none  0      10        0.426     0.711         0.819          0.669       0.591
+      FastICA    residB  0      10       -0.000     0.728         0.793          0.681       0.587
+         iVAE    residB  0      10        0.381     0.990         0.885          0.693       0.549
+      FastICA    residA  1       9        0.303     0.632         0.712          0.534       0.544
+      FastICA    residA  2       8        0.201     0.529         0.696          0.512       0.528
+      FastICA    residA  3       7        0.122     0.475         0.654          0.456       0.500
+      FastICA    residA  4       6        0.083     0.345         0.482          0.257       0.343
+      FastICA    residA  5       5        0.052     0.264         0.454          0.241       0.328
+      FastICA    residA  6       4        0.033     0.181         0.379          0.176       0.284
+      FastICA    residA  7       3        0.019     0.142         0.312          0.131       0.089
+      FastICA    residA  8       2        0.009     0.101         0.168          0.109       0.065
+      FastICA    residA  9       1        0.002     0.027         0.045          0.053       0.023
+         iVAE    residA  1       9        0.149     0.645         0.782          0.637       0.538
+         iVAE    residA  2       8        0.147     0.600         0.784          0.640       0.523
+         iVAE    residA  3       7        0.146     0.619         0.771          0.631       0.527
+         iVAE    residA  4       6        0.144     0.585         0.765          0.625       0.533
+         iVAE    residA  5       5        0.160     0.581         0.754          0.619       0.537
+         iVAE    residA  6       4        0.151     0.546         0.744          0.608       0.531
+         iVAE    residA  7       3        0.137     0.502         0.687          0.580       0.518
+         iVAE    residA  8       2        0.137     0.438         0.668          0.556       0.496
+         iVAE    residA  9       1        0.043     0.186         0.243          0.454       0.264
+ Resid-linear    direct  0      10       -0.000     0.728         0.787          0.678       0.591
+    Resid-mlp    direct  0      10        0.000     0.734         0.717          0.672       0.582
+     Resid-rf    direct  0      10       -0.000     0.247         0.233          0.363       0.193
+  Flower-cond embedding  0      10        0.016     0.108         0.270          0.594       0.532
+Flower-uncond embedding  0      10        0.428     0.708         0.815          0.662       0.591
+
+Monotonicity check: passed (residA curves non-increasing in k).

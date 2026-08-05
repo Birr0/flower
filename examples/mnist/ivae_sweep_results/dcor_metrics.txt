@@ -1,0 +1,44 @@
+Distance correlation, whole representation vs variable — RGB-MNIST
+digit: LOWER = better removal | b/rot: HIGHER = better preservation
+n_subsample=4000; read each score against its *_null column
+
+       source    method  k  n_dims  digit_dcor  digit_null  b_dcor  b_null  rot_dcor  rot_null
+          Raw      none  0      64       0.641       0.083   0.421   0.056     0.558     0.065
+  Flower-cond embedding  0      64       0.399       0.103   0.344   0.073     0.413     0.084
+Flower-uncond embedding  0      64       0.459       0.101   0.336   0.071     0.410     0.081
+      FastICA    residB  0      64       0.130       0.109   0.351   0.079     0.343     0.090
+      FastICA    residA  1      63       0.435       0.110   0.340   0.079     0.357     0.090
+      FastICA    residA  7      57       0.304       0.107   0.350   0.078     0.293     0.088
+      FastICA    residA 13      51       0.198       0.105   0.362   0.077     0.239     0.086
+      FastICA    residA 20      44       0.118       0.102   0.380   0.075     0.106     0.083
+      FastICA    residA 26      38       0.111       0.100   0.138   0.073     0.084     0.081
+      FastICA    residA 32      32       0.106       0.098   0.133   0.069     0.081     0.078
+      FastICA    residA 38      26       0.102       0.093   0.127   0.066     0.077     0.073
+      FastICA    residA 44      20       0.094       0.087   0.118   0.065     0.069     0.068
+      FastICA    residA 51      13       0.082       0.076   0.102   0.056     0.060     0.060
+      FastICA    residA 57       7       0.068       0.064   0.086   0.050     0.051     0.052
+      FastICA    residA 63       1       0.045       0.034   0.059   0.027     0.033     0.023
+    iVAE-cond    residB  0      64       0.174       0.082   0.472   0.059     0.531     0.068
+    iVAE-cond    residA  1      63       0.690       0.082   0.387   0.055     0.495     0.065
+    iVAE-cond    residA  7      57       0.690       0.082   0.387   0.055     0.495     0.065
+    iVAE-cond    residA 13      51       0.690       0.082   0.387   0.055     0.495     0.065
+    iVAE-cond    residA 20      44       0.690       0.082   0.387   0.055     0.495     0.065
+    iVAE-cond    residA 26      38       0.657       0.082   0.397   0.055     0.501     0.064
+    iVAE-cond    residA 32      32       0.657       0.082   0.397   0.055     0.501     0.064
+    iVAE-cond    residA 38      26       0.615       0.079   0.411   0.054     0.504     0.063
+    iVAE-cond    residA 44      20       0.522       0.076   0.436   0.053     0.524     0.062
+    iVAE-cond    residA 51      13       0.422       0.071   0.459   0.051     0.533     0.060
+    iVAE-cond    residA 57       7       0.287       0.061   0.430   0.042     0.472     0.051
+    iVAE-cond    residA 63       1       0.137       0.038   0.436   0.022     0.152     0.031
+    iVAE-fair    residB  0      64       0.363       0.034   0.238   0.026     0.382     0.031
+    iVAE-fair    residA  1      63       0.303       0.031   0.226   0.024     0.362     0.029
+    iVAE-fair    residA  7      57       0.301       0.030   0.226   0.024     0.363     0.029
+    iVAE-fair    residA 13      51       0.299       0.030   0.227   0.024     0.363     0.029
+    iVAE-fair    residA 20      44       0.297       0.030   0.227   0.023     0.367     0.029
+    iVAE-fair    residA 26      38       0.297       0.030   0.230   0.023     0.371     0.029
+    iVAE-fair    residA 32      32       0.297       0.030   0.231   0.023     0.375     0.029
+    iVAE-fair    residA 38      26       0.296       0.029   0.233   0.023     0.381     0.030
+    iVAE-fair    residA 44      20       0.294       0.029   0.234   0.023     0.385     0.030
+    iVAE-fair    residA 51      13       0.299       0.030   0.238   0.023     0.392     0.030
+    iVAE-fair    residA 57       7       0.301       0.033   0.246   0.023     0.394     0.031
+    iVAE-fair    residA 63       1       0.238       0.028   0.240   0.019     0.493     0.026
