@@ -1,0 +1,50 @@
+Removal vs preservation — 2D-Gaussian toy (issue #27 / E8)
+removal = mode accuracy, MLP probe (chance 0.25, lower better)
+preservation = distance R^2, MLP probe (higher better)
+
+Consistency check at the shared setting (beta=1, omega=1):
+  beta sweep : removal 0.282  preservation 0.978
+  omega sweep: removal 0.272  preservation 0.987
+  delta      : removal 0.010  preservation 0.009
+
+Pareto-optimal points (nothing removes more AND preserves more):
+    knob          value  removal  preservation
+baseline FastICA-residB    0.250         1.000
+
+All points:
+    knob          value  removal  preservation
+    beta          0.000    1.000         0.911
+    beta          0.001    1.000         0.973
+    beta          0.010    0.984         0.970
+    beta          0.020    0.797         0.734
+    beta          0.030    0.610         0.673
+    beta          0.050    0.425         0.745
+    beta          0.070    0.367         0.845
+    beta          0.100    0.322         0.934
+    beta          0.150    0.298         0.964
+    beta          0.200    0.295         0.966
+    beta          0.300    0.298         0.966
+    beta          0.500    0.294         0.967
+    beta          1.000    0.282         0.978
+    beta          2.000    0.284         0.978
+    beta          5.000    0.281         0.982
+    beta         10.000    0.280         0.984
+    beta         50.000    0.281         0.980
+    beta        100.000    0.279         0.981
+    beta       1000.000    0.288         0.977
+   omega          0.000    0.999         0.977
+   omega          0.100    0.843         0.825
+   omega          0.200    0.716         0.647
+   omega          0.300    0.607         0.484
+   omega          0.400    0.530         0.424
+   omega          0.500    0.464         0.471
+   omega          0.600    0.400         0.590
+   omega          0.700    0.349         0.739
+   omega          0.800    0.307         0.878
+   omega          0.900    0.278         0.969
+   omega          1.000    0.272         0.987
+baseline       Raw-none    1.000         0.998
+baseline FastICA-residA    0.493         0.457
+baseline FastICA-residB    0.250         1.000
+baseline    iVAE-residA    0.880         0.275
+baseline    iVAE-residB    0.263         0.994
