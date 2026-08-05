@@ -1,0 +1,15 @@
+2D-Gaussian: conditional prior ablation — probes + final flow-matching loss
+3 seeds per arm, 20001 iterations each, 20000 held-out samples (fixed eval seed 1234), 32 t-points
+condition = GMM component (4 classes, chance = 0.25); LOWER cls_acc = better removal
+dist_r2 = preserved residual factor (HIGHER = better); S = straightness integral (LOWER = straighter)
+Probes/S/cfm_loss use beta_sweep.py's definitions verbatim, so these rows concatenate with its results.csv.
+cfm_cond scores each arm against ITS OWN base, so it is not a like-for-like
+model-quality score: a learned base shortens transport and thus lowers the
+loss for an easier problem. cfm_uncond should match across arms.
+
+                   cls_acc_logreg          cls_acc_mlp          dist_r2_linreg          dist_r2_mlp          cfm_loss          straightness          cfm_cond          cfm_cond_fixed          cfm_uncond          cfm_total
+                             mean      std        mean      std           mean      std        mean      std     mean      std         mean      std     mean      std           mean      std       mean      std      mean      std
+variant
+no_prior                  0.27507  0.01217     0.27547  0.00998       -0.00090  0.00046     0.98453  0.00777  2.55332  0.10210      2.20320  0.02068  1.11277  0.00183        1.11554  0.00539    4.13951  0.01351   2.62614  0.00673
+learned_prior_b0.1        0.31720  0.00936     0.31533  0.00913        0.00023  0.00067     0.93317  0.00896  2.19457  0.08932      0.72204  0.00184  0.36041  0.00110        2.22083  0.04847    4.14175  0.01203   2.25108  0.00583
+learned_prior_b1          0.28000  0.00682     0.28027  0.00364        0.00007  0.00107     0.97767  0.00275  2.50888  0.09378      1.93831  0.00649  0.96744  0.00341        1.12931  0.00458    4.14041  0.01284   2.55393  0.00808

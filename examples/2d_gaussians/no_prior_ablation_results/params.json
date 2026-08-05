@@ -1,0 +1,41 @@
+{
+  "args": {
+    "variants": [
+      "no_prior",
+      "learned_prior_b0.1",
+      "learned_prior_b1"
+    ],
+    "learned_betas": [
+      0.1,
+      1.0
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "iterations": 20001,
+    "outdir": "no_prior_ablation_results"
+  },
+  "variants": {
+    "no_prior": [
+      false,
+      0.0
+    ],
+    "learned_prior_b0.1": [
+      true,
+      0.1
+    ],
+    "learned_prior_b1": [
+      true,
+      1.0
+    ]
+  },
+  "lr": 0.001,
+  "batch_size": 1024,
+  "warmup_iters": 10000,
+  "n_eval": 20000,
+  "n_t": 32,
+  "eval_seed": 1234,
+  "device": "cuda"
+}
