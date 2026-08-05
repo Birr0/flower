@@ -10,12 +10,15 @@ import warnings
 from pathlib import Path
 from unittest import mock
 
+import lightning as L
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 import torch
 import torch.nn as nn
+from hydra.utils import get_object
 from lightning.pytorch import Trainer
+from omegaconf import OmegaConf
 from torch.utils.data import Dataset
 
 from flower.data.modules import FlowerDataLoader
@@ -607,6 +610,61 @@ class TestMiniE2EDspritesFlow:
             )
         assert "orig" in out
 
+    def test_test_step_with_conditional_prior(self, model, dummy_batch_dsprites):
+        """dsprites.LightningFlowMatching.test_step duplicates base_step's
+        loss computation (see issue #12) — exercise it directly with the
+        default use_conditional_prior=True to confirm it still runs and
+        produces the MLP-probe outputs the on_test_epoch_end hook expects."""
+        model.on_test_start()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            output = model.test_step(dummy_batch_dsprites, 0)
+        assert set(output.keys()) >= {"cond", "uncond", "orig", "catalog"}
+        model.test_step_outputs.clear()
+
+    def test_test_step_without_conditional_prior(self, load_config):
+        """Same as above but with use_conditional_prior=False — confirms the
+        flag branch added to base_step (#3) was mirrored correctly into this
+        duplicated test_step, per the plan tracked in issue #12."""
+        cfg = load_config("dsprites_Flow")
+        catalog = cfg["data"]["y_catalog"]
+        encoder = MockEncoder(latent_dim=64)
+        model = LightningFlowMatching(
+            base_model=encoder,
+            lr=cfg["lightning_loader"]["lr"],
+            batch_size=4,
+            code_dim=64,
+            hidden_dim=64,
+            catalog=catalog,
+            n_layers=4,
+            max_beta=0.0,
+            use_conditional_prior=False,
+        )
+        assert model.vf.conditional_prior is None
+
+        batch_size = 4
+        batch = {
+            "X": torch.randn(batch_size, 1, 64, 64),
+            "y": torch.randn(batch_size, 7),
+            "catalog": {
+                "label_shape": torch.zeros(batch_size, 1),
+                "value_x_position": torch.zeros(batch_size, 1),
+                "value_y_position": torch.zeros(batch_size, 1),
+                "value_orientation_sin": torch.zeros(batch_size, 1),
+                "value_orientation_cos": torch.zeros(batch_size, 1),
+                "value_scale": torch.zeros(batch_size, 1),
+                "label": torch.zeros(batch_size, 1),
+                "label_disparity": torch.zeros(batch_size, 1),
+            },
+        }
+
+        model.on_test_start()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            output = model.test_step(batch, 0)
+        assert set(output.keys()) >= {"cond", "uncond", "orig", "catalog"}
+        model.test_step_outputs.clear()
+
     @pytest.mark.skip(
         reason="predict_step with cond/uncond requires solver which needs a checkpoint"
     )
@@ -815,3 +873,140 @@ def mock_dsprites_env(tmp_dsprites_data):
         os.environ, {"DATA_ROOT": str(tmp_dsprites_data.parent)}, clear=False
     ):
         yield tmp_dsprites_data
+
+
+# ===========================================================================
+# 5. Real-YAML config verification
+#
+# The `load_config` fixture above builds config dicts in Python, mirroring the
+# YAML by hand. That cannot catch drift in the actual files under `src/conf/`,
+# which is how five malformed `_target_` paths ("flower..data.…") survived from
+# the initial commit until issue #34. These tests read the YAML off disk.
+# ===========================================================================
+
+_DATA_CONF_DIR = _ROOT / "src" / "conf" / "data"
+
+
+def _iter_targets(node, trail=""):
+    """Yield (yaml_path, target) for every `_target_` under `node`."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "_target_":
+                yield trail or "<root>", value
+            else:
+                yield from _iter_targets(value, f"{trail}.{key}" if trail else key)
+    elif isinstance(node, list):
+        for i, value in enumerate(node):
+            yield from _iter_targets(value, f"{trail}[{i}]")
+
+
+def _data_config_files():
+    return sorted(_DATA_CONF_DIR.glob("*.yaml"))
+
+
+class TestDataConfigTargets:
+    """Every `_target_` in `src/conf/data/` must be importable.
+
+    `cfg.data.loader` is instantiated recursively, so an unresolvable target
+    raises at construction time -- before `FlowerDataLoader.setup()` is ever
+    reached -- and takes down every callback that monitors `val_loss` with it.
+    """
+
+    def test_data_configs_found(self):
+        assert _data_config_files(), f"no data configs under {_DATA_CONF_DIR}"
+
+    @pytest.mark.parametrize("config_path", _data_config_files(), ids=lambda p: p.name)
+    def test_every_target_resolves(self, config_path, tmp_path):
+        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
+        targets = list(_iter_targets(cfg))
+        assert targets, f"{config_path.name} declares no _target_"
+
+        # `flower.data.sdss` reads DATA_ROOT at module scope, so importing it
+        # without a value raises TypeError rather than a helpful error.
+        with mock.patch.dict(os.environ, {"DATA_ROOT": str(tmp_path)}, clear=False):
+            for yaml_path, target in targets:
+                try:
+                    get_object(target)
+                except Exception as exc:
+                    pytest.fail(
+                        f"{config_path.name}: {yaml_path}._target_ = {target!r} "
+                        f"is not importable: {type(exc).__name__}: {exc}"
+                    )
+
+    @pytest.mark.parametrize("config_path", _data_config_files(), ids=lambda p: p.name)
+    def test_all_three_splits_declared(self, config_path):
+        """train/val/test must all be present -- #34 only broke val and test."""
+        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
+        datasets = cfg.get("loader", {}).get("datasets", {})
+        assert set(datasets) >= {"train", "val", "test"}, (
+            f"{config_path.name} loader.datasets is missing a split: {sorted(datasets)}"
+        )
+
+
+_EXPERIMENT_CONF_DIR = _ROOT / "src" / "conf" / "experiment"
+
+
+def _experiment_config_files():
+    return sorted(_EXPERIMENT_CONF_DIR.rglob("*.yaml"))
+
+
+def _experiment_model_files():
+    return sorted(_EXPERIMENT_CONF_DIR.glob("*/model.yaml"))
+
+
+class TestExperimentConfigTargets:
+    """Every `_target_` under `src/conf/experiment/` must be importable.
+
+    Module moves are the failure mode here: when the Lightning modules were
+    relocated out of `flower.training.*` into the per-dataset `flower.models.*`
+    files, `rgbmnist_VAE/model.yaml` was left pointing at the old path and the
+    experiment could no longer be trained (#35). Nothing in the suite read the
+    real config tree, so it went unnoticed.
+    """
+
+    def test_experiment_configs_found(self):
+        assert _experiment_config_files(), f"nothing under {_EXPERIMENT_CONF_DIR}"
+
+    @pytest.mark.parametrize(
+        "config_path",
+        _experiment_config_files(),
+        ids=lambda p: f"{p.parent.name}/{p.name}",
+    )
+    def test_every_target_resolves(self, config_path, tmp_path):
+        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
+        with mock.patch.dict(os.environ, {"DATA_ROOT": str(tmp_path)}, clear=False):
+            for yaml_path, target in _iter_targets(cfg):
+                try:
+                    get_object(target)
+                except Exception as exc:
+                    pytest.fail(
+                        f"{config_path.parent.name}/{config_path.name}: "
+                        f"{yaml_path}._target_ = {target!r} is not importable: "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+
+    @pytest.mark.parametrize(
+        "config_path", _experiment_model_files(), ids=lambda p: p.parent.name
+    )
+    def test_lightning_loader_is_a_lightning_module(self, config_path):
+        """`lightning_loader._target_` must name a LightningModule subclass.
+
+        Resolving the dotted path is not enough: a target that still imports but
+        no longer names a trainable module would pass the check above and fail at
+        `trainer.fit`.
+        """
+        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
+        loader = cfg.get("lightning_loader")
+        assert loader, f"{config_path.parent.name}/model.yaml has no lightning_loader"
+        assert "_target_" in loader, (
+            f"{config_path.parent.name}: lightning_loader declares no _target_"
+        )
+        cls = get_object(loader["_target_"])
+        assert isinstance(cls, type), (
+            f"{config_path.parent.name}: lightning_loader._target_ = "
+            f"{loader['_target_']!r} is not a class"
+        )
+        assert issubclass(cls, L.LightningModule), (
+            f"{config_path.parent.name}: lightning_loader._target_ = "
+            f"{loader['_target_']!r} is not a LightningModule subclass"
+        )

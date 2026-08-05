@@ -27,9 +27,12 @@ class LightningFlowMatching(LightningFlowMatchingBase):
         x_1 = self.base_model.encode(X)["z"]
         batch_size = x_1.shape[0]
 
-        mu_model, log_var = self.vf.conditional_prior(y)
-        eps = torch.randn_like(x_1)
-        x_0_cond = mu_model + torch.exp(0.5 * log_var) * eps
+        if self.use_conditional_prior:
+            mu_model, log_var = self.vf.conditional_prior(y)
+            eps = torch.randn_like(x_1)
+            x_0_cond = mu_model + torch.exp(0.5 * log_var) * eps
+        else:
+            x_0_cond = torch.randn_like(x_1)
 
         x_0_uncond = torch.randn_like(x_1)
 
@@ -49,10 +52,14 @@ class LightningFlowMatching(LightningFlowMatchingBase):
 
         cfm_loss = torch.pow(v_t - v_tgt, 2).mean()
 
-        kl_loss = (
-            0.5 * torch.sum(torch.exp(log_var) + mu_model**2 - 1 - log_var, dim=-1)
-        ).mean()
-        beta = self.get_beta()
+        if self.use_conditional_prior:
+            kl_loss = (
+                0.5 * torch.sum(torch.exp(log_var) + mu_model**2 - 1 - log_var, dim=-1)
+            ).mean()
+            beta = self.get_beta()
+        else:
+            kl_loss = torch.tensor(0.0, device=x_1.device)
+            beta = 0.0
         loss = cfm_loss + beta * kl_loss
 
         self.log("test_loss", loss)
