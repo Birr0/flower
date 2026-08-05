@@ -1,16 +1,12 @@
 import math
-import os
 from pathlib import Path
 
 import torch
 from datasets import DatasetDict, load_dataset, load_from_disk
-from dotenv import load_dotenv
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as F
 
-load_dotenv()
-
-DATA_ROOT = os.getenv("DATA_ROOT")
+from flower.utilities import data_root
 
 
 class dSprites(Dataset):
@@ -18,7 +14,7 @@ class dSprites(Dataset):
         self.x_ds = x_ds
         self.y_catalog = y_catalog
 
-        self.data = load_from_disk(f"{DATA_ROOT}/dsprites-dataset")[split]
+        self.data = load_from_disk(f"{data_root()}/dsprites-dataset")[split]
 
     def __len__(self):
         return len(self.data)
@@ -86,12 +82,12 @@ def prep_dsprites_subsample(n_train=100000, n_val=25000, n_test=25000, seed=42):
 
     ds_splits_dict = DatasetDict(ds_splits)
     # 2. Save to a folder
-    ds_splits_dict.save_to_disk(f"{DATA_ROOT}/dsprites-dataset")
+    ds_splits_dict.save_to_disk(f"{data_root()}/dsprites-dataset")
 
 
 if __name__ == "__main__":
     # prep_dsprites_subsample()
-    if not Path(f"{DATA_ROOT}/dsprites-dataset").exists():
+    if not Path(f"{data_root()}/dsprites-dataset").exists():
         print("Data not found. Running prep_dsprites_subsample...")
         prep_dsprites_subsample()
 
