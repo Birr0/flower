@@ -1,4 +1,5 @@
 import math
+import warnings
 from typing import Protocol
 
 import lightning as L
@@ -195,7 +196,14 @@ class ConditionalPrior(nn.Module):
 
 
 class VelocityField(nn.Module, PyTorchModelHubMixin):
-    def __init__(self, code_dim, hidden_dim, conditional_dim, n_layers=3):
+    def __init__(
+        self,
+        code_dim,
+        hidden_dim,
+        conditional_dim,
+        n_layers=3,
+        use_conditional_prior=True,
+    ):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.time_dim = 1
@@ -218,8 +226,12 @@ class VelocityField(nn.Module, PyTorchModelHubMixin):
             embedding_dim=conditional_dim,
         )
 
-        self.conditional_prior = ConditionalPrior(
-            cond_dim=conditional_dim, hidden_dim=hidden_dim, code_dim=code_dim
+        self.conditional_prior = (
+            ConditionalPrior(
+                cond_dim=conditional_dim, hidden_dim=hidden_dim, code_dim=code_dim
+            )
+            if use_conditional_prior
+            else None
         )
         # parameter for y embeddings
 
@@ -255,6 +267,7 @@ class LightningFlowMatching(L.LightningModule):
         beta_warmup_steps=10000,
         max_beta=1.0,
         n_layers=2,
+        use_conditional_prior=True,
     ):
         super().__init__()
 
@@ -267,11 +280,30 @@ class LightningFlowMatching(L.LightningModule):
         self.n_layers = n_layers
         self.hidden_dim = hidden_dim
 
+        self.use_conditional_prior = use_conditional_prior
         self.beta_start_step = beta_start_step
         self.beta_warmup_steps = beta_warmup_steps
         self.max_beta = max_beta
+
+        if not use_conditional_prior and max_beta != 0.0:
+            warnings.warn(
+                "use_conditional_prior=False but max_beta="
+                f"{max_beta} was set; the KL term is dropped entirely "
+                "when there is no conditional prior, so beta_start_step, "
+                "beta_warmup_steps, and max_beta have no effect. Set "
+                "max_beta=0.0 to silence this warning.",
+                UserWarning,
+                stacklevel=2,
+            )
+
         # --- Models --- #
-        self.vf = VelocityField(code_dim, hidden_dim, self.cond_dim, n_layers)
+        self.vf = VelocityField(
+            code_dim,
+            hidden_dim,
+            self.cond_dim,
+            n_layers,
+            use_conditional_prior=use_conditional_prior,
+        )
         self.vf.apply(self._init_weights)
         self.base_model = base_model
 
@@ -345,9 +377,12 @@ class LightningFlowMatching(L.LightningModule):
         x_1 = self.base_model.encode(X)["z"]
         batch_size = x_1.shape[0]
 
-        mu_model, log_var = self.vf.conditional_prior(y)
-        eps = torch.randn_like(x_1)
-        x_0_cond = mu_model + torch.exp(0.5 * log_var) * eps
+        if self.use_conditional_prior:
+            mu_model, log_var = self.vf.conditional_prior(y)
+            eps = torch.randn_like(x_1)
+            x_0_cond = mu_model + torch.exp(0.5 * log_var) * eps
+        else:
+            x_0_cond = torch.randn_like(x_1)
 
         x_0_uncond = torch.randn_like(x_1)
 
@@ -367,10 +402,14 @@ class LightningFlowMatching(L.LightningModule):
 
         cfm_loss = torch.pow(v_t - v_tgt, 2).mean()
 
-        kl_loss = (
-            0.5 * torch.sum(torch.exp(log_var) + mu_model**2 - 1 - log_var, dim=-1)
-        ).mean()
-        beta = self.get_beta()
+        if self.use_conditional_prior:
+            kl_loss = (
+                0.5 * torch.sum(torch.exp(log_var) + mu_model**2 - 1 - log_var, dim=-1)
+            ).mean()
+            beta = self.get_beta()
+        else:
+            kl_loss = torch.tensor(0.0, device=x_1.device)
+            beta = 0.0
         loss = cfm_loss + beta * kl_loss
 
         self.log(f"{partition}_loss", loss)

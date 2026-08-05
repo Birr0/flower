@@ -1,0 +1,32 @@
+# @package _global_
+
+defaults:
+- /data/dsprites
+- /trainer/gpu
+- /logger/wandb
+- /logger/csv
+- /paths/default
+- /hydra/default
+- model
+- sweeps
+- meta
+- _self_
+
+hydra:
+  sweeper:
+    params:
+      #++data.y_catalog.drop_variables: ${....sweeps.drop_variables.0}
+      +seed: ${....sweeps.seeds.0}
+
+data:
+  loader:
+    # Forked DataLoader workers (num_workers>0, torch's default 'fork' start
+    # method) hang indefinitely on this machine, independent of CUDA state or
+    # data source -- confirmed via isolation test outside Hydra/Lightning.
+    # num_workers=0 runs the loader in-process and avoids the hang.
+    num_workers: 0
+
+trainer:
+  max_epochs: 2
+  limit_train_batches: 3
+  limit_val_batches: 2

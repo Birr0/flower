@@ -12,6 +12,7 @@ lightning_loader:
   beta_start_step: 0
   beta_warmup_steps: 10000
   max_beta: 1.0
+  use_conditional_prior: true
   n_steps: 20
   n_layers: 2
   hidden_dim: 64
