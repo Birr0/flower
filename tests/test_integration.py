@@ -900,6 +900,81 @@ def _iter_targets(node, trail=""):
             yield from _iter_targets(value, f"{trail}[{i}]")
 
 
+def _load(path):
+    """Load a config without resolving interpolations."""
+    return OmegaConf.to_container(OmegaConf.load(path), resolve=False)
+
+
+_CONF_DIR = _ROOT / "src" / "conf"
+
+# Config groups excluded from `_target_` verification, with the reason. Keep this
+# short and justified -- anything listed here is a config that can rot silently.
+_UNVERIFIED_CONF_GROUPS = {
+    "hparams_search": (
+        "template boilerplate referencing optuna and hydra-optuna-sweeper, "
+        "neither declared in pyproject.toml, so its targets cannot resolve in any "
+        "environment built from this repo. Tracked in #43."
+    ),
+}
+
+
+def _all_config_files():
+    """Every config YAML except those in an explicitly unverified group."""
+    return sorted(
+        path
+        for path in _CONF_DIR.rglob("*.yaml")
+        if path.relative_to(_CONF_DIR).parts[0] not in _UNVERIFIED_CONF_GROUPS
+    )
+
+
+def _conf_id(path):
+    return str(path.relative_to(_CONF_DIR))
+
+
+class TestConfigTargets:
+    """Every `_target_` under `src/conf/` must be importable.
+
+    The two classes below cover group-specific structural rules; this covers
+    target resolution across the whole tree, so a config group nobody thought to
+    write a test for is still checked. Both failure modes it guards have already
+    happened here: a malformed dotted path that survived from the initial commit
+    (#34), and a class relocated out from under a config still pointing at the
+    old module (#35).
+    """
+
+    def test_scan_reaches_the_tree(self):
+        """Guard against a glob that silently matches nothing."""
+        files = _all_config_files()
+        assert len(files) > 20, f"only {len(files)} configs found under {_CONF_DIR}"
+        targets = [t for f in files for t in _iter_targets(_load(f))]
+        assert len(targets) > 20, (
+            f"only {len(targets)} targets found; scan looks broken"
+        )
+
+    @pytest.mark.parametrize(
+        ("group", "reason"),
+        sorted(_UNVERIFIED_CONF_GROUPS.items()),
+        ids=lambda v: str(v)[:24],
+    )
+    def test_unverified_groups_still_exist(self, group, reason):
+        """A stale exclusion silently widens the gap, so fail if the group is gone."""
+        assert (_CONF_DIR / group).is_dir(), (
+            f"{group!r} is listed as unverified ({reason}) but no longer exists -- "
+            "remove it from _UNVERIFIED_CONF_GROUPS"
+        )
+
+    @pytest.mark.parametrize("config_path", _all_config_files(), ids=_conf_id)
+    def test_every_target_resolves(self, config_path):
+        for yaml_path, target in _iter_targets(_load(config_path)):
+            try:
+                get_object(target)
+            except Exception as exc:
+                pytest.fail(
+                    f"{_conf_id(config_path)}: {yaml_path}._target_ = {target!r} "
+                    f"is not importable: {type(exc).__name__}: {exc}"
+                )
+
+
 def _data_config_files():
     return sorted(_DATA_CONF_DIR.glob("*.yaml"))
 
@@ -916,21 +991,11 @@ class TestDataConfigTargets:
         assert _data_config_files(), f"no data configs under {_DATA_CONF_DIR}"
 
     @pytest.mark.parametrize("config_path", _data_config_files(), ids=lambda p: p.name)
-    def test_every_target_resolves(self, config_path):
-        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
-        targets = list(_iter_targets(cfg))
-        assert targets, f"{config_path.name} declares no _target_"
-
-        # No DATA_ROOT needed: since #37 the data modules resolve it lazily, so
-        # importing them is side-effect free.
-        for yaml_path, target in targets:
-            try:
-                get_object(target)
-            except Exception as exc:
-                pytest.fail(
-                    f"{config_path.name}: {yaml_path}._target_ = {target!r} "
-                    f"is not importable: {type(exc).__name__}: {exc}"
-                )
+    def test_declares_a_target(self, config_path):
+        """Resolution is checked tree-wide; this pins that the file declares any."""
+        assert list(_iter_targets(_load(config_path))), (
+            f"{config_path.name} declares no _target_"
+        )
 
     @pytest.mark.parametrize("config_path", _data_config_files(), ids=lambda p: p.name)
     def test_all_three_splits_declared(self, config_path):
@@ -965,23 +1030,6 @@ class TestExperimentConfigTargets:
 
     def test_experiment_configs_found(self):
         assert _experiment_config_files(), f"nothing under {_EXPERIMENT_CONF_DIR}"
-
-    @pytest.mark.parametrize(
-        "config_path",
-        _experiment_config_files(),
-        ids=lambda p: f"{p.parent.name}/{p.name}",
-    )
-    def test_every_target_resolves(self, config_path):
-        cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
-        for yaml_path, target in _iter_targets(cfg):
-            try:
-                get_object(target)
-            except Exception as exc:
-                pytest.fail(
-                    f"{config_path.parent.name}/{config_path.name}: "
-                    f"{yaml_path}._target_ = {target!r} is not importable: "
-                    f"{type(exc).__name__}: {exc}"
-                )
 
     @pytest.mark.parametrize(
         "config_path", _experiment_model_files(), ids=lambda p: p.parent.name
