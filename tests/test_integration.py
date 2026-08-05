@@ -916,22 +916,21 @@ class TestDataConfigTargets:
         assert _data_config_files(), f"no data configs under {_DATA_CONF_DIR}"
 
     @pytest.mark.parametrize("config_path", _data_config_files(), ids=lambda p: p.name)
-    def test_every_target_resolves(self, config_path, tmp_path):
+    def test_every_target_resolves(self, config_path):
         cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
         targets = list(_iter_targets(cfg))
         assert targets, f"{config_path.name} declares no _target_"
 
-        # `flower.data.sdss` reads DATA_ROOT at module scope, so importing it
-        # without a value raises TypeError rather than a helpful error.
-        with mock.patch.dict(os.environ, {"DATA_ROOT": str(tmp_path)}, clear=False):
-            for yaml_path, target in targets:
-                try:
-                    get_object(target)
-                except Exception as exc:
-                    pytest.fail(
-                        f"{config_path.name}: {yaml_path}._target_ = {target!r} "
-                        f"is not importable: {type(exc).__name__}: {exc}"
-                    )
+        # No DATA_ROOT needed: since #37 the data modules resolve it lazily, so
+        # importing them is side-effect free.
+        for yaml_path, target in targets:
+            try:
+                get_object(target)
+            except Exception as exc:
+                pytest.fail(
+                    f"{config_path.name}: {yaml_path}._target_ = {target!r} "
+                    f"is not importable: {type(exc).__name__}: {exc}"
+                )
 
     @pytest.mark.parametrize("config_path", _data_config_files(), ids=lambda p: p.name)
     def test_all_three_splits_declared(self, config_path):
@@ -972,18 +971,17 @@ class TestExperimentConfigTargets:
         _experiment_config_files(),
         ids=lambda p: f"{p.parent.name}/{p.name}",
     )
-    def test_every_target_resolves(self, config_path, tmp_path):
+    def test_every_target_resolves(self, config_path):
         cfg = OmegaConf.to_container(OmegaConf.load(config_path), resolve=False)
-        with mock.patch.dict(os.environ, {"DATA_ROOT": str(tmp_path)}, clear=False):
-            for yaml_path, target in _iter_targets(cfg):
-                try:
-                    get_object(target)
-                except Exception as exc:
-                    pytest.fail(
-                        f"{config_path.parent.name}/{config_path.name}: "
-                        f"{yaml_path}._target_ = {target!r} is not importable: "
-                        f"{type(exc).__name__}: {exc}"
-                    )
+        for yaml_path, target in _iter_targets(cfg):
+            try:
+                get_object(target)
+            except Exception as exc:
+                pytest.fail(
+                    f"{config_path.parent.name}/{config_path.name}: "
+                    f"{yaml_path}._target_ = {target!r} is not importable: "
+                    f"{type(exc).__name__}: {exc}"
+                )
 
     @pytest.mark.parametrize(
         "config_path", _experiment_model_files(), ids=lambda p: p.parent.name

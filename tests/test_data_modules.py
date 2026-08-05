@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
+import sys
+
+import pytest
 import torch
 
 from flower.data.modules import FlowerDataLoader, FlowerDataset
@@ -166,3 +171,65 @@ class TestFlowerDataLoader:
         # Just verify it iterates without error
         batch = next(iter(loader))
         assert batch is not None
+
+
+class TestImportWithoutDataRoot:
+    """The data modules must import with `DATA_ROOT` unset (#37).
+
+    `sdss.py` read the variable at module scope and concatenated it, so a fresh
+    interpreter raised `TypeError: unsupported operand type(s) for +: 'NoneType'
+    and 'str'` before any user code ran. That took down anything importing the
+    module transitively, including pytest collection on a clone with no `.env`.
+
+    Run in a subprocess from a temporary directory: the module is already
+    imported in this process, and `load_dotenv()` would otherwise walk up and
+    find the repository's own `.env`.
+    """
+
+    MODULES = ("flower.data.sdss", "flower.data.dsprites")
+
+    def _import_in_clean_interpreter(
+        self, module: str, cwd
+    ) -> subprocess.CompletedProcess:
+        env = {k: v for k, v in os.environ.items() if k != "DATA_ROOT"}
+        return subprocess.run(
+            [sys.executable, "-c", f"import {module}"],
+            cwd=cwd,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            check=False,
+        )
+
+    @pytest.mark.parametrize("module", MODULES)
+    def test_imports_without_data_root(self, module: str, tmp_path):
+        result = self._import_in_clean_interpreter(module, tmp_path)
+        assert result.returncode == 0, (
+            f"importing {module} without DATA_ROOT failed:\n{result.stderr}"
+        )
+
+    @pytest.mark.parametrize("module", MODULES)
+    def test_no_none_leaks_into_a_path(self, module: str, tmp_path):
+        """Importing must not silently build a path from a `None` root.
+
+        `dsprites.py` did not raise at import -- it stored `None` and produced
+        `"None/dsprites-dataset"` later, which fails far from the cause.
+        """
+        env = {k: v for k, v in os.environ.items() if k != "DATA_ROOT"}
+        probe = (
+            f"import {module} as m;"
+            "vals = [str(v) for v in vars(m).values() if isinstance(v, str)];"
+            "bad = [v for v in vals if v.startswith('None')];"
+            "assert not bad, bad"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", probe],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=300,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr

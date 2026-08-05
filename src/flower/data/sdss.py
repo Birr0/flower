@@ -2,14 +2,22 @@ import os
 
 import torch
 from datasets import DatasetDict, load_dataset, load_from_disk
-from dotenv import load_dotenv
 from spender.instrument import get_skyline_mask
 from torch.utils.data import Dataset
 
-load_dotenv()
-RAW_DATA_DIR = os.getenv("DATA_ROOT") + "/sdss/"
-DATA_DIR = os.getenv("DATA_ROOT") + "/sdss/sdss_II_catalog"
+from flower.utilities import data_root
+
 LOADING_SCRIPT = "./sdss_II_resources/sdss_mmu.py"
+
+
+def raw_data_dir() -> str:
+    """Directory holding the raw SDSS download. Resolved at call time (#37)."""
+    return f"{data_root()}/sdss/"
+
+
+def data_dir() -> str:
+    """Directory holding the processed SDSS catalog. Resolved at call time (#37)."""
+    return f"{data_root()}/sdss/sdss_II_catalog"
 
 
 class SDSS(Dataset):
@@ -25,14 +33,14 @@ class SDSS(Dataset):
         if not self.data_exists():  # this needs replaced.
             if not self.raw_data_exists():
                 msg = f"""
-                Data not found in {RAW_DATA_DIR}.
+                Data not found in {raw_data_dir()}.
                 """
                 raise ValueError(msg)
             dataset = load_dataset(
                 LOADING_SCRIPT,
-                data_dir=RAW_DATA_DIR,
+                data_dir=raw_data_dir(),
                 trust_remote_code=True,
-                cache_dir=RAW_DATA_DIR,
+                cache_dir=raw_data_dir(),
             )
 
             dataset_traintest = dataset["train"].train_test_split(
@@ -51,8 +59,8 @@ class SDSS(Dataset):
                 }
             )
             # Need to merge the catalog with the dataset.
-            os.mkdir(DATA_DIR)
-            dataset.save_to_disk(DATA_DIR)
+            os.mkdir(data_dir())
+            dataset.save_to_disk(data_dir())
 
         if split not in ["train", "test", "val"]:
             msg = f"Invalid split: {split}. \
@@ -62,7 +70,7 @@ class SDSS(Dataset):
         self.x_ds = x_ds
         self.y_catalog = y_catalog
 
-        self.dataset = load_from_disk(DATA_DIR)[split]
+        self.dataset = load_from_disk(data_dir())[split]
         self._wave_obs = 10 ** torch.arange(3.578, 3.97, 0.0001)
         self._skyline_mask = get_skyline_mask(self._wave_obs)
         self.return_id = return_id
@@ -72,12 +80,12 @@ class SDSS(Dataset):
     @staticmethod
     def raw_data_exists():
         # simple check of the path.
-        return os.path.exists(RAW_DATA_DIR)
+        return os.path.exists(raw_data_dir())
 
     @staticmethod
     def data_exists():
         # simple check of the path.
-        return os.path.exists(DATA_DIR)
+        return os.path.exists(data_dir())
 
     def prepare_spectrum(
         self,
