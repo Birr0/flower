@@ -101,15 +101,26 @@ residB: **0.999**), against Flower's 0.748/0.792 (`results_index.md` §1).
   `RANDOM_STATE`), while the Flower curves are 3-seed means with s.d. bars. Do not
   read small baseline-vs-Flower gaps as significant. See `TODO.md`.
 
-## Not covered — the cMNIST half of #27
+## Not covered — the cMNIST β-frontier, descoped
 
 Flower's β-frontier on cMNIST is **not** a re-plot, contrary to the "Low (re-plot)"
 estimate in `rebuttal_issue_plan.md`. It needs one embedding per β, and
 `$DATA_ROOT/rgbmnist/` holds only `rgbmnist_Flow_cond_prior` (single run
 `7518770_0`), `rgbmnist_Flow_smoke_test` and `rgbmnist_VAE` — no β-ablation
 embeddings, despite the `rgbmnist_Flow_beta_ablation` config existing. Producing
-that panel means training runs. The existing `examples/mnist/combined_frontier.png`
-remains the cMNIST answer: baselines swept over k, Flower as a point.
+that panel means training runs.
+
+**Descoped rather than deferred.** The training cost is out of proportion to what a
+second frontier adds: the toy is the only setting where *both* of Flower's knobs are
+swept end to end, so it is the only place the frontier shape is informative, and the
+cMNIST answer already exists in a different form —
+`examples/mnist/combined_frontier.png`, baselines swept over k with Flower as a point.
+
+**This does not weaken the pairing requirement above.** The pairing that finding 3
+demands is the cMNIST/spectra *matched-removal* comparison, not a cMNIST frontier —
+`examples/mnist/ivae_sweep_results/` and `examples/spectra/ivae_sweep_paper_eval_results/`,
+both committed. Those are what show the residB construction collapsing (digit 0.114
+linear vs 0.858 MLP) where it was exact here.
 
 ## Re-run
 
